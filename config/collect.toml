@@ -1,0 +1,34 @@
+# Settings for `python -m so_recommender.collect`. Paths are relative to the repo root.
+# See docs/03_data_source.md for the collection strategy.
+
+[api]
+base_url = "https://api.stackexchange.com/2.3"
+site = "stackoverflow"
+key_env = "STACKEXCHANGE_KEY"   # read from the environment or .env
+pagesize = 100                  # API maximum
+request_delay_seconds = 1.0     # pause between requests, on top of any `backoff` the API asks for
+timeout_seconds = 60
+max_retries = 5
+min_quota_remaining = 50        # stop before the daily quota runs out
+
+[sample]
+tags = ["python"]
+# 1. Seed: top-voted questions per tag. Many are canonical originals with many duplicates.
+seed_pages_per_tag = 1
+seed_sort = "votes"
+# 2. Linked: questions that link to the seeds; the ones closed as duplicates give labelled pairs.
+# Seeds have hundreds of linked questions each: 100 seeds per request timed out, so keep it small.
+linked_batch_size = 10
+linked_pages_per_batch = 3
+# 3. Background: ordinary questions of the tag, used as non-relevant candidates.
+background_pages_per_tag = 1
+background_sort = "activity"
+# 4. Originals referenced by duplicates but not fetched yet (repeated for duplicate chains).
+original_rounds = 3
+# 5. Answers and comments, fetched in batches of 100 parent ids.
+answer_pages_per_batch = 5
+comment_pages_per_batch = 5
+
+[paths]
+raw_dir = "data/raw"
+state_file = "data/collect_state.json"
