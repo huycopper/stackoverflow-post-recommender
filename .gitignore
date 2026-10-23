@@ -1,0 +1,30 @@
+# Data & secrets: never commit
+data/
+.env
+*.key
+
+# Model artifacts
+*.pt
+*.bin
+*.safetensors
+*.ckpt
+checkpoints/
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+
+# Notebooks
+.ipynb_checkpoints/
+
+# OS / editors
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
