@@ -58,6 +58,7 @@ Câu trả lời có `<h2>`, `<a href=...>` và khối code xen giữa chữ. Ng
 
 - Đổi ngày từ số Unix sang UTC timestamp, chuẩn hóa tag (viết thường), ép kiểu theo data contract.
 - Xử lý trường bị thiếu, ví dụ câu hỏi không có comment thì để `comment_count = 0` và `text_comments = ""`.
+- **Không tin `comment_count` của API.** Trong mẫu ngày 24/10 có 80 trên 991 câu hỏi có `comment_count > 0` nhưng endpoint comments trả về 0 comment. Gọi lại cũng vậy (ví dụ câu 79904105). Có thể comment đã bị xóa nhưng vẫn được đếm. Phải tính lại `comment_count` từ comment thực sự lấy được, và ghi con số lệch này vào mục Khó khăn của báo cáo.
 - **Kiểm tra:** chạy validate theo schema. Fail thì dừng pipeline.
 
 ## Báo cáo số liệu

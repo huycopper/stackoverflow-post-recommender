@@ -30,6 +30,11 @@ Mỗi quyết định ghi: **ngày, quyết định, lý do, người chốt**. 
 - **Quyết định:** dùng repo `huycopper/stackoverflow-post-recommender` làm repo chung, bắt đầu từ đầu. Repo `44444huy/DataScience_20261` không dùng nữa.
 - **Người chốt:** Huy Copper.
 
+### D7. Thiết kế bộ thu thập (24/10/2026)
+- **Quyết định:** bộ thu thập chỉ dùng thư viện chuẩn của Python. Lấy mẫu theo thứ tự seed (câu vote cao) → linked (câu trùng trỏ tới seed) → background → originals → answers/comments. Lưu raw nguyên văn, data contract lên 0.2 cho lớp raw.
+- **Lý do:** ai cũng chạy được mà không cần cài thêm. Đi từ các câu hỏi "kinh điển" cho ra nhiều cặp trùng với ít request. Chi tiết ở [03](03_data_source.md).
+- **Người làm:** Huy Copper.
+
 ## Câu hỏi mở
 
 | # | Câu hỏi | Ai chốt | Trạng thái |

@@ -8,7 +8,7 @@ Hệ thống gợi ý **top-K câu hỏi Stack Overflow liên quan nhất** cho 
 
 Nhãn đúng lấy từ quan hệ **câu hỏi trùng (duplicate)** trên Stack Overflow. Đánh giá bằng Precision@K, Recall@K, NDCG@K.
 
-**Trạng thái (23/10/2026):** giai đoạn thu thập dữ liệu. Chưa có code. Xem [docs/09_roadmap.md](docs/09_roadmap.md).
+**Trạng thái (24/10/2026):** giai đoạn thu thập dữ liệu. Đã có bộ thu thập qua API. Xem [docs/09_roadmap.md](docs/09_roadmap.md).
 
 ## Đọc gì trước
 
@@ -46,9 +46,28 @@ Chi tiết phân công xem [docs/08_team_workflow.md](docs/08_team_workflow.md).
 
 ## Cài đặt
 
-Chưa có code. Phần này sẽ cập nhật khi có bộ thu thập dữ liệu đầu tiên. Dự kiến:
+Cần Python 3.11 trở lên. Bộ thu thập chỉ dùng thư viện chuẩn của Python. Phần dev (pytest, ruff) cài bằng [uv](https://docs.astral.sh/uv/).
 
 ```bash
-cp .env.example .env    # điền STACKEXCHANGE_KEY
-python -m venv .venv
+uv sync                 # tạo .venv, cài package và nhóm dev
+cp .env.example .env    # điền STACKEXCHANGE_KEY (xin key ở StackApps, xem docs/03)
+uv run pytest           # chạy test
+uv run ruff check .     # lint
 ```
+
+Không dùng uv thì chạy `python -m venv .venv`, kích hoạt venv rồi `pip install -e . pytest ruff`.
+
+## Thu thập dữ liệu
+
+Chạy từ thư mục gốc của repo. Cấu hình nằm ở [config/collect.toml](config/collect.toml).
+
+```bash
+uv run python -m so_recommender.collect run --max-requests 50   # chạy thử nhỏ
+uv run python -m so_recommender.collect run                     # chạy đủ; chạy lại để tiếp tục
+uv run python -m so_recommender.collect summary --out reports/collect_summary.json
+```
+
+- Dữ liệu thô được ghi vào `data/raw/`, tiến độ ghi vào `data/collect_state.json`. Cả thư mục `data/` không commit.
+- Muốn lấy một mẫu nhỏ để xem thử thì thêm `--config config/collect_sample.toml`. Mẫu này chỉ lấy 1 trang `linked` mỗi batch và ghi riêng vào `data/sample/`.
+- Khi gần hết quota, bị API throttle hoặc bị ngắt (Ctrl+C), chương trình **tự dừng và lưu tiến độ**. Chạy lại đúng lệnh cũ để tiếp tục.
+- Chi tiết các bước và chiến lược lấy mẫu xem [docs/03_data_source.md](docs/03_data_source.md).

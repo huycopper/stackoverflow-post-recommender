@@ -51,4 +51,8 @@ Môn học bắt buộc khai báo mọi thư viện, model và code có sẵn tr
 
 | Thư viện / model | Dùng cho | Phần |
 |---|---|---|
-| *(chưa có)* | | |
+| Python standard library (`urllib`, `gzip`, `json`, `tomllib`) | Gọi API, lưu raw, đọc config | collect |
+| Stack Exchange API v2.3 | Nguồn dữ liệu | collect |
+| pytest | Test | dev |
+| ruff | Lint, format | dev |
+| uv | Quản lý môi trường | dev |

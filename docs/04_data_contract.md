@@ -1,6 +1,6 @@
 # 04. Data contract
 
-> **Version: 0.1 (DRAFT)**. Bản nháp do ETL đề xuất, **chưa được bên model (Hung) duyệt**. Sẽ chốt thành 1.0 sau khi có dữ liệu mẫu thật.
+> **Version: 0.2 (DRAFT)**. Bản nháp do ETL đề xuất, **chưa được bên model (Hung) duyệt**. Sẽ chốt thành 1.0 sau khi có dữ liệu mẫu thật.
 
 Đây là **giao diện giữa ETL và bên model**. ETL cam kết xuất đúng định dạng này. Bên model chỉ đọc từ các bảng ở mục 2 và 3, không đọc dữ liệu thô.
 
@@ -12,8 +12,11 @@ Quy tắc thay đổi:
 
 ## 1. Dữ liệu thô: `data/raw/`
 
-- Response nguyên văn từ API, mỗi dòng một response: `data/raw/{endpoint}/{YYYYMMDD}.jsonl.gz`.
-- Mỗi dòng có dạng `{"fetched_at": "...", "url": "...", "params": {...}, "response": {...}}`.
+- Response nguyên văn từ API, mỗi dòng một response: `data/raw/{endpoint}/{YYYYMMDD}.jsonl.gz` (ngày theo UTC).
+- `endpoint` ∈ `filters`, `questions`, `questions_linked`, `questions_by_id`, `answers`, `question_comments`, `answer_comments`. Ý nghĩa từng loại xem [03](03_data_source.md#các-endpoint-đang-dùng).
+- Mỗi dòng có dạng `{"fetched_at": "<ISO UTC>", "endpoint": "...", "url": "<không có key>", "params": {...}, "response": {...}}`.
+- Cùng một bản ghi có thể xuất hiện nhiều lần (nhiều tag, chạy lại sau khi bị ngắt). Bước làm sạch khử trùng theo ID ([05](05_cleaning_pipeline.md), bước 3).
+- Đọc bằng `so_recommender.collect.raw_store.iter_raw(root, endpoint)`.
 - **Không sửa, chỉ ghi thêm.** Không commit lên git.
 
 ## 2. Dữ liệu sạch: `data/clean/` (Parquet)
@@ -108,4 +111,5 @@ Mỗi dòng là một câu hỏi, đã ghép sẵn văn bản cho từng cấu h
 
 ## Changelog
 
+- **0.2** (24/10/2026): mô tả cụ thể lớp raw theo bộ thu thập: thêm trường `endpoint`, liệt kê tên các thư mục endpoint, `url` không chứa key, raw có thể trùng bản ghi.
 - **0.1** (23/10/2026): bản nháp đầu tiên.

@@ -21,44 +21,58 @@
 
 Key đặt trong biến môi trường `STACKEXCHANGE_KEY` (file `.env`, **không commit**).
 
-## Các endpoint dự kiến dùng
+## Các endpoint đang dùng
 
-| Mục đích | Endpoint |
-|---|---|
-| Lấy câu hỏi theo tag | `GET /questions?tagged=python&sort=votes&filter=…` |
-| Chi tiết câu hỏi theo ID (tối đa 100 ID mỗi lần) | `GET /questions/{ids}` |
-| Câu trả lời | `GET /questions/{ids}/answers` |
-| Comment của câu hỏi | `GET /questions/{ids}/comments` |
-| Comment của câu trả lời | `GET /answers/{ids}/comments` |
-| Câu hỏi liên kết hoặc trùng | `GET /questions/{ids}/linked` |
+Code nằm ở `src/so_recommender/collect/`. Mỗi endpoint ghi raw vào một thư mục riêng trong `data/raw/`.
 
-Lấy quan hệ trùng:
+| Bước | Endpoint | Thư mục raw |
+|---|---|---|
+| `filter` | `GET /filters/create` (base `withbody` + các trường thêm) | `filters/` |
+| `seed`, `background` | `GET /questions?tagged=…&sort=…` | `questions/` |
+| `linked` | `GET /questions/{ids}/linked` | `questions_linked/` |
+| `originals` | `GET /questions/{ids}` | `questions_by_id/` |
+| `answers` | `GET /questions/{ids}/answers` | `answers/` |
+| `question_comments` | `GET /questions/{ids}/comments` | `question_comments/` |
+| `answer_comments` | `GET /answers/{ids}/comments` | `answer_comments/` |
+
+`{ids}` là tối đa 100 ID nối bằng `;`, mỗi lần lấy tối đa 100 bản ghi một trang.
+
+**Filter tùy chỉnh** = `withbody` + `question.closed_details`, `question.closed_date`, `question.closed_reason`, `question.comment_count`, `question.answer_count`, `question.link`, `answer.comment_count`, `comment.post_type`. Mã filter được tạo một lần rồi lưu trong state.
+
+Lấy quan hệ trùng (đã kiểm tra với API thật ngày 23/10/2026):
 
 - Câu hỏi bị đóng vì trùng có `closed_reason = "Duplicate"`.
-- Trường `closed_details.original_questions` liệt kê các câu gốc. Trường này cần được đưa vào filter.
-- `/questions/{ids}/linked` trả về các câu hỏi liên kết tới, trong đó có những câu đã đóng vì trùng.
+- `closed_details.original_questions` liệt kê các câu gốc. Ví dụ: câu 79904105 có câu gốc là 38987.
+- `/questions/{id}/linked` của một câu hỏi phổ biến có khoảng 16–18% là câu đã đóng vì trùng. Câu 38987 có 453 câu liên kết tới.
 
-Hai cách trên cần đối chiếu với nhau khi viết bộ thu thập, rồi ghi lại cách chốt vào file này.
+Comment và câu trả lời được lấy qua endpoint riêng, **không** nhúng vào filter của `/questions`. Lý do: cách này chắc chắn lấy đủ và có phân trang rõ ràng. Câu hỏi có `answer_count = 0` hoặc `comment_count = 0` được bỏ qua để tiết kiệm request.
 
-**Mẹo tiết kiệm quota:** tạo **filter tùy chỉnh** (`/filters/create`) để lấy luôn body, câu trả lời và comment trong cùng một response, thay vì gọi riêng từng endpoint.
+## Quy tắc khi gọi API (đã cài trong `client.py`)
 
-## Quy tắc khi gọi API
+- Đọc `quota_remaining` trong mỗi response và **dừng khi còn dưới `min_quota_remaining`** (mặc định 50).
+- Nếu response có trường `backoff`, **chờ số giây đó cộng thêm 2 giây** trước request kế tiếp. Chờ đúng bằng `backoff` vẫn bị API báo vi phạm (đã gặp ngày 24/10). Client áp mức chờ này cho mọi endpoint cho chắc.
+- Mỗi request cách nhau ít nhất `request_delay_seconds` (1 giây), có timeout.
+- Bị throttle (`error_id` 502) hoặc HTTP 429: chờ đúng số giây API báo. Nếu API không báo thì chờ tăng dần 60 → 120 → 240 giây. Thử 3 lần vẫn bị chặn thì **dừng và lưu tiến độ**.
+- Lưu **nguyên văn response** vào `data/raw/`, kèm thời điểm gọi và URL **không chứa key**. Nhờ vậy chạy lại bước làm sạch không tốn quota.
+- Tiến độ lưu ở `data/collect_state.json` sau mỗi trang hoặc mỗi batch. Chạy lại lệnh cũ là tiếp tục đúng chỗ dừng.
 
-- Đọc `quota_remaining` trong mỗi response và dừng khi còn dưới ngưỡng (ví dụ 20).
-- Nếu response có trường `backoff`, **phải chờ đủ số giây đó** trước khi gọi lại endpoint đó.
-- Có độ trễ giữa các request (khoảng 1 giây) và timeout cho mỗi request.
-- Lưu **nguyên văn response** vào `data/raw/` (JSONL nén gzip, kèm thời điểm gọi và URL) để có thể chạy lại bước làm sạch mà không tốn quota.
-- Bộ thu thập phải **chạy tiếp được** khi bị dừng giữa chừng: ghi lại trang hoặc ID đã lấy xong.
+### Bài học: đừng gọi dồn dập
 
-## Chiến lược lấy mẫu (đề xuất, chưa chốt)
+Ngày 23/10/2026, vài request thử gọi `/questions/{ids}/linked` liên tiếp nhau, kèm các lần thử lại mỗi 30 giây. Kết quả là API trả `throttle_violation: Violation of backoff parameter`, rồi tới **HTTP 429 `error code: 1015`**: Cloudflare chặn tạm thời theo IP. Nếu gặp lại:
 
-1. **Câu hỏi trùng:** các câu hỏi đã đóng vì trùng trong tag đã chọn. Đây là các query.
-2. **Câu hỏi gốc:** các câu được những câu trên trỏ tới. Đây là các câu liên quan.
-3. **Câu hỏi nền:** các câu hỏi thường cùng tag, dùng làm câu không liên quan và làm kho tìm kiếm thực tế hơn.
+- **Không** gọi thử liên tục bằng script riêng. Để client tự chờ, hoặc đợi khoảng 30–60 phút rồi chạy lại. Lần này lệnh chặn của Cloudflare hết sau khoảng 10 phút.
+- Request bị timeout vẫn có thể đã được server xử lý, kèm một `backoff` mà mình không nhận được. Vì vậy client chờ ít nhất 30 giây trước khi thử lại.
+- Mỗi người chỉ chạy **một** bộ thu thập tại một thời điểm, trên một IP.
 
-Với mỗi câu hỏi, lấy thêm câu trả lời và comment của cả câu hỏi lẫn câu trả lời.
+## Chiến lược lấy mẫu (đã cài, chỉnh trong `config/collect.toml`)
 
-Ước lượng số request: một trang lấy được 100 câu hỏi. Với key 10.000 request/ngày, lấy vài chục nghìn câu hỏi kèm comment và câu trả lời mất khoảng 1–2 ngày.
+1. **Seed:** `seed_pages_per_tag` trang câu hỏi được vote cao nhất của mỗi tag. Phần lớn là câu "kinh điển", có nhiều câu khác trùng với nó.
+2. **Linked:** các câu hỏi liên kết tới seed, tối đa `linked_pages_per_batch` trang cho mỗi batch `linked_batch_size` seed (mặc định 10). Batch nhỏ vì mỗi seed có hàng trăm câu liên kết: gửi 100 seed trong một request thì API bị timeout, rồi báo vi phạm backoff. Câu nào đã đóng vì trùng thì cho ra một hoặc nhiều cặp (câu trùng, câu gốc). Đây là các **query** có nhãn.
+3. **Background:** `background_pages_per_tag` trang câu hỏi thường cùng tag (`sort=activity`). Dùng làm câu không liên quan, để kho tìm kiếm thực tế hơn.
+4. **Originals:** lấy thêm những câu gốc chưa có, tối đa `original_rounds` vòng để xử lý chuỗi trùng. Câu đã bị xóa được ghi nhận vào `unavailable_question_ids` để không hỏi lại.
+5. **Answers và comments** của mọi câu hỏi đã lấy, và comment của mọi câu trả lời. Batch nào chạm giới hạn số trang thì được đếm trong `truncated_batches` của state, để biết phần nào bị cắt.
+
+Ước lượng: một trang lấy được 100 câu hỏi. Mỗi 100 câu hỏi tốn khoảng 10–20 request cho câu trả lời và comment. Với key 10.000 request/ngày, lấy được vài chục nghìn câu hỏi trong 1–2 ngày.
 
 ## Bản quyền
 

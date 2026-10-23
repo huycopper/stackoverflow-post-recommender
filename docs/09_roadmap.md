@@ -8,14 +8,14 @@ Cập nhật lần cuối: **23/10/2026**. Ngày báo cáo tiến độ và báo
 
 - [x] Tạo repo chung và các docs context. (Huy Copper)
 - [ ] Mời cả nhóm vào repo. (Huy Copper)
-- [ ] Đăng ký key StackApps. (Huy Copper)
+- [x] Đăng ký key StackApps (app 41381, key `api-collector` hết hạn khoảng 21/01/2027, lưu trong `.env` trên máy Huy Copper). (Huy Copper)
 - [ ] Hỏi TA về việc đổi nguồn dữ liệu sang Stack Overflow, và Stack Overflow có tính là mạng xã hội không. (?)
 - [ ] Chốt người cho phần "Training + viết báo cáo". (Nam, Hoàng)
 
 ## Giai đoạn 1: Thu thập dữ liệu
 
-- [ ] Bộ thu thập qua API: quota, backoff, chạy tiếp được khi dừng, lưu raw. (Huy Copper)
-- [ ] Lấy mẫu vài trăm câu hỏi kèm câu trả lời, comment và quan hệ trùng. (Huy Copper)
+- [x] Bộ thu thập qua API: quota, backoff, chạy tiếp được khi dừng, lưu raw. (Huy Copper)
+- [x] Lấy mẫu kèm câu trả lời, comment và quan hệ trùng: 1.210 câu hỏi, 308 cặp trùng, 4.120 câu trả lời, 14.540 comment, tốn 218 request (`config/collect_sample.toml`, 24/10). (Huy Copper)
 - [ ] Gửi mẫu cho bên model, chốt data contract lên **1.0**. (ETL + Hung)
 - [ ] Lấy dữ liệu đầy đủ theo chiến lược lấy mẫu ở [03](03_data_source.md). (ETL)
 
