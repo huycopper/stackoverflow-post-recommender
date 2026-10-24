@@ -12,7 +12,7 @@ data/raw/            JSONL.gz, response nguyên văn, chỉ ghi thêm
 data/clean/          Parquet theo data contract (04)
       │  build documents + splits
       ▼
-documents.parquet ──► models (baseline, model chính) ──► evaluation (P/R/NDCG@K)
+documents.json + qrels.json ──► models (baseline, model chính) ──► evaluation (P/R/NDCG@K)
                                                               │
                                                               ▼
                                                      results/, reports/

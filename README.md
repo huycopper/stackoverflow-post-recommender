@@ -69,5 +69,11 @@ uv run python -m so_recommender.collect summary --out reports/collect_summary.js
 
 - Dữ liệu thô được ghi vào `data/raw/`, tiến độ ghi vào `data/collect_state.json`. Cả thư mục `data/` không commit.
 - Muốn lấy một mẫu nhỏ để xem thử thì thêm `--config config/collect_sample.toml`. Mẫu này chỉ lấy 1 trang `linked` mỗi batch và ghi riêng vào `data/sample/`.
+- `summary` cho biết dữ liệu còn thiếu bao nhiêu so với số đếm của API (`answers.questions_missing_some`, `comments.on_*_expected`). Nếu thiếu, chạy `repair` để đưa phần thiếu lại vào hàng đợi, rồi chạy `run` để lấy bù:
+
+  ```bash
+  uv run python -m so_recommender.collect repair
+  uv run python -m so_recommender.collect run --steps answers question_comments answer_comments
+  ```
 - Khi gần hết quota, bị API throttle hoặc bị ngắt (Ctrl+C), chương trình **tự dừng và lưu tiến độ**. Chạy lại đúng lệnh cũ để tiếp tục.
 - Chi tiết các bước và chiến lược lấy mẫu xem [docs/03_data_source.md](docs/03_data_source.md).

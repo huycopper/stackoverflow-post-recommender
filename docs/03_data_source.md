@@ -70,7 +70,10 @@ Ngày 23/10/2026, vài request thử gọi `/questions/{ids}/linked` liên tiế
 2. **Linked:** các câu hỏi liên kết tới seed, tối đa `linked_pages_per_batch` trang cho mỗi batch `linked_batch_size` seed (mặc định 10). Batch nhỏ vì mỗi seed có hàng trăm câu liên kết: gửi 100 seed trong một request thì API bị timeout, rồi báo vi phạm backoff. Câu nào đã đóng vì trùng thì cho ra một hoặc nhiều cặp (câu trùng, câu gốc). Đây là các **query** có nhãn.
 3. **Background:** `background_pages_per_tag` trang câu hỏi thường cùng tag (`sort=activity`). Dùng làm câu không liên quan, để kho tìm kiếm thực tế hơn.
 4. **Originals:** lấy thêm những câu gốc chưa có, tối đa `original_rounds` vòng để xử lý chuỗi trùng. Câu đã bị xóa được ghi nhận vào `unavailable_question_ids` để không hỏi lại.
-5. **Answers và comments** của mọi câu hỏi đã lấy, và comment của mọi câu trả lời. Batch nào chạm giới hạn số trang thì được đếm trong `truncated_batches` của state, để biết phần nào bị cắt.
+5. **Answers và comments** của mọi câu hỏi đã lấy, và comment của mọi câu trả lời.
+   - ID được **gom batch theo số lượng mục** (`answer_count` hoặc `comment_count` do API báo), mỗi batch khoảng `items_per_batch` mục (mặc định 500, tức 5 trang). Sau đó lấy **hết mọi trang** của batch.
+   - `max_pages_per_batch` (50) chỉ là lưới an toàn. Nếu chạm giới hạn này, ID của batch đó được ghi vào `truncated_ids` trong state.
+   - Trước 24/10 mỗi batch luôn có 100 ID và chỉ lấy tối đa 5 trang. Cách đó làm **mất khoảng 55% câu trả lời** của các câu hỏi kinh điển, vốn có tới 60–87 câu trả lời mỗi câu. Nếu dữ liệu cũ bị thiếu, chạy `repair` rồi `run` lại để lấy bù (xem README).
 
 Ước lượng: một trang lấy được 100 câu hỏi. Mỗi 100 câu hỏi tốn khoảng 10–20 request cho câu trả lời và comment. Với key 10.000 request/ngày, lấy được vài chục nghìn câu hỏi trong 1–2 ngày.
 

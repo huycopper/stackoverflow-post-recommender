@@ -1,6 +1,6 @@
 # 04. Data contract
 
-> **Version: 0.2 (DRAFT)**. Bản nháp do ETL đề xuất, **chưa được bên model (Hung) duyệt**. Sẽ chốt thành 1.0 sau khi có dữ liệu mẫu thật.
+> **Version: 0.3 (DRAFT)**. Hung đã gửi định dạng đầu vào model mong muốn (23/10/2026, mục 3). ETL cần xác nhận với Hung các trường bổ sung ở mục 3, sau đó chốt thành 1.0.
 
 Đây là **giao diện giữa ETL và bên model**. ETL cam kết xuất đúng định dạng này. Bên model chỉ đọc từ các bảng ở mục 2 và 3, không đọc dữ liệu thô.
 
@@ -9,6 +9,7 @@ Quy tắc thay đổi:
 - Thêm trường mới không bắt buộc: tăng minor version (0.1 → 0.2).
 - Đổi tên, đổi kiểu hoặc xóa trường: tăng major version, và cần cả ETL lẫn bên model duyệt PR.
 - Mọi thay đổi đều ghi vào mục Changelog cuối file và thêm một mục vào [decisions.md](decisions.md).
+- Trước bản 1.0 đây vẫn là bản nháp: được đổi tên hoặc đổi trường mà chỉ cần tăng minor version, miễn là ghi changelog.
 
 ## 1. Dữ liệu thô: `data/raw/`
 
@@ -89,27 +90,64 @@ Cặp này có hướng. Đã bỏ các cặp tự trỏ về chính nó và cá
 | `question_id` | int64 | không | |
 | `split` | string | không | `train`, `val` hoặc `test`. **Chia theo `group_id`** |
 
-## 3. Dữ liệu đưa vào model: `data/clean/documents.parquet`
+## 3. Dữ liệu đưa vào model: `data/clean/documents.json`
 
-Mỗi dòng là một câu hỏi, đã ghép sẵn văn bản cho từng cấu hình thí nghiệm.
+### Định dạng Hung yêu cầu (nhóm Messenger, 23/10/2026 20:37)
 
-| Trường | Kiểu | Mô tả |
-|---|---|---|
-| `question_id` | int64 | |
-| `text_content` | string | `title` + `body_text`. Dùng cho cấu hình `C` |
-| `text_comments` | string | Các comment của câu hỏi, nối theo thời gian. Dùng cho cấu hình `C+Cm` |
-| `text_answers` | string | Câu trả lời được chấp nhận hoặc điểm cao nhất. Dùng cho cấu hình `C+Cm+A` (tùy chọn) |
-| `tags` | list\<string\> | |
-| `split` | string | |
+Một **mảng JSON**, mỗi phần tử là một câu hỏi. Ví dụ Hung gửi:
+
+```json
+[
+  {
+    "title": "Python async",
+    "body": "How do I use async await? This is so ridiculouasd. ",
+    "comments": ["Use asyncio.run"],
+    "tags": ["python", "asyncio"]
+  },
+  {
+    "title": "Async task error",
+    "body": "My asyncio task fails and it's because of my cat",
+    "comments": ["Wow you should cook him"],
+    "tags": ["python", "asyncio"]
+  }
+]
+```
+
+### Các trường
+
+| Trường | Kiểu | Nguồn trong dữ liệu sạch | Trạng thái |
+|---|---|---|---|
+| `title` | string | `questions.title` (đã giải mã HTML) | Hung yêu cầu |
+| `body` | string | `questions.body_text` (đã bóc HTML) | Hung yêu cầu. Có giữ code không: xem câu hỏi mở |
+| `comments` | list\<string\> | `comments.text` của câu hỏi, xếp theo thời gian, **đã bỏ comment làm lộ đáp án**. Rỗng `[]` nếu không có | Hung yêu cầu |
+| `tags` | list\<string\> | `questions.tags` | Hung yêu cầu |
+| `question_id` | int64 | `questions.question_id` | **ETL đề xuất thêm**: cần để nối với nhãn đúng, chia dữ liệu và trích link nguồn |
+| `split` | string | `splits.split` | **ETL đề xuất thêm**: `train`, `val`, `test` theo nhóm trùng |
+| `answers` | list\<string\> | `answers.body_text`, xếp theo điểm | **ETL đề xuất thêm**, tùy chọn: chỉ cần nếu chạy cấu hình `C+Cm+A` |
+
+Cấu hình thí nghiệm ([07](07_modeling_eval.md)): `C` dùng `title` + `body`, `C+Cm` dùng thêm `comments`.
+
+### Nhãn đúng: `data/clean/qrels.json` (ETL đề xuất)
+
+Mảng các query, tức các câu hỏi bị đóng vì trùng:
+
+```json
+[{"query_id": 79904105, "relevant_ids": [38987], "split": "test"}]
+```
+
+`relevant_ids` là các câu khác cùng nhóm trùng với query (`duplicate_groups`). Định dạng của Hung không có chỗ cho nhãn, nên cần một file riêng như thế này hoặc một cách khác mà Hung chọn.
 
 ## Câu hỏi mở cần chốt với bên model
 
-- [ ] `text_comments` lấy cả comment của câu trả lời, hay chỉ comment của câu hỏi?
-- [ ] Có giữ code (`body_code`) trong văn bản đưa vào model không, hay bỏ hẳn?
+- [x] Định dạng lưu: **mảng JSON** như Hung gửi (23/10). Nếu file quá lớn thì có thể đổi sang JSONL (mỗi dòng một object).
+- [ ] Hung có đồng ý thêm `question_id`, `split` (và `answers` nếu cần) vào mỗi phần tử không?
+- [ ] Nhãn đúng để ở file `qrels.json` như trên, hay Hung muốn cách khác?
+- [ ] `comments` chỉ lấy comment của câu hỏi (theo ví dụ của Hung), hay lấy cả comment của các câu trả lời?
+- [ ] `body` có giữ code (`body_code`) không, hay bỏ hẳn?
 - [ ] Có cắt độ dài văn bản không (model dạng transformer giới hạn số token)?
-- [ ] Định dạng lưu là Parquet, hay JSONL để dễ đọc?
 
 ## Changelog
 
+- **0.3** (24/10/2026): viết lại mục 3 theo định dạng Hung gửi ngày 23/10: mảng JSON gồm `title`, `body`, `comments`, `tags`, lưu ở `documents.json`. ETL đề xuất thêm `question_id`, `split`, `answers` và file nhãn `qrels.json`, đang chờ Hung xác nhận. Thay cho `documents.parquet` của bản 0.2.
 - **0.2** (24/10/2026): mô tả cụ thể lớp raw theo bộ thu thập: thêm trường `endpoint`, liệt kê tên các thư mục endpoint, `url` không chứa key, raw có thể trùng bản ghi.
 - **0.1** (23/10/2026): bản nháp đầu tiên.

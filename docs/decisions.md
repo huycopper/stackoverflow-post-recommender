@@ -35,13 +35,23 @@ Mỗi quyết định ghi: **ngày, quyết định, lý do, người chốt**. 
 - **Lý do:** ai cũng chạy được mà không cần cài thêm. Đi từ các câu hỏi "kinh điển" cho ra nhiều cặp trùng với ít request. Chi tiết ở [03](03_data_source.md).
 - **Người làm:** Huy Copper.
 
+### D8. Không cắt câu trả lời và comment (24/10/2026)
+- **Quyết định:** batch câu trả lời và comment được gom theo `answer_count`/`comment_count` (khoảng 500 mục mỗi batch) và lấy hết mọi trang. Thêm lệnh `repair` để lấy bù dữ liệu cũ bị thiếu.
+- **Lý do:** cách cũ (100 ID, tối đa 5 trang) làm mẫu ngày 24/10 chỉ có 4.120 trên 9.222 câu trả lời. Cấu hình `C+Cm` cần comment của câu trả lời đầy đủ, còn báo cáo cần số liệu đúng.
+- **Người làm:** Huy Copper.
+
+### D9. Định dạng đầu vào model (23/10/2026)
+- **Quyết định:** dữ liệu đưa cho bên model là một **mảng JSON**, mỗi phần tử gồm `title`, `body`, `comments` (danh sách chuỗi) và `tags` (danh sách chuỗi). Ghi trong data contract 0.3 ([04](04_data_contract.md), mục 3).
+- **Lý do:** bên model cần một định dạng thống nhất để mỗi bên làm một phần ("thống nhất format data dùng cho model xong mỗi bên làm 1 thành phần").
+- **Người chốt:** Hung (nhóm Messenger, 23/10/2026 20:37). ETL đề xuất thêm `question_id`, `split`, `answers` và file nhãn `qrels.json`, đang chờ Hung xác nhận.
+
 ## Câu hỏi mở
 
 | # | Câu hỏi | Ai chốt | Trạng thái |
 |---|---|---|---|
 | Q1 | Báo TA việc đổi nguồn sang Stack Overflow, Stack Overflow có tính là "social media" không | ? | Chưa hỏi lại |
 | Q2 | Lưu trữ: Python + Parquet/SQL, hay lakehouse/Spark | Nguyễn Huy | Đang cân nhắc. Đề xuất Python ([06](06_architecture.md#lưu-trữ)) |
-| Q3 | Phạm vi tag: `python`, hay thêm `pandas`, hay tag khác | ETL | Chưa chốt |
-| Q4 | Data contract 0.1 lên 1.0 | ETL + Hung | Chờ dữ liệu mẫu |
+| Q3 | Phạm vi tag: `python`, hay thêm `pandas`, hay tag khác | ETL | Lần chạy đầy đủ đầu tiên (24/10): chỉ `python`, 10 trang seed. Muốn thêm tag thì thêm vào `config/collect.toml` rồi chạy tiếp |
+| Q4 | Data contract lên 1.0 | ETL + Hung | Hung đã gửi định dạng (D9). Còn chờ Hung trả lời các trường bổ sung và cách lưu nhãn ([04](04_data_contract.md#câu-hỏi-mở-cần-chốt-với-bên-model)) |
 | Q5 | Ai làm phần "Training + viết báo cáo" | Nam, Hoàng | Chưa chọn |
 | Q6 | Có fine-tune model không | Hung | Chưa chốt ([07](07_modeling_eval.md)) |

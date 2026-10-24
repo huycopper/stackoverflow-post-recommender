@@ -15,15 +15,21 @@ Cập nhật lần cuối: **23/10/2026**. Ngày báo cáo tiến độ và báo
 ## Giai đoạn 1: Thu thập dữ liệu
 
 - [x] Bộ thu thập qua API: quota, backoff, chạy tiếp được khi dừng, lưu raw. (Huy Copper)
-- [x] Lấy mẫu kèm câu trả lời, comment và quan hệ trùng: 1.210 câu hỏi, 308 cặp trùng, 4.120 câu trả lời, 14.540 comment, tốn 218 request (`config/collect_sample.toml`, 24/10). (Huy Copper)
+- [x] Lấy mẫu kèm câu trả lời, comment và quan hệ trùng (`config/collect_sample.toml`, 24/10), tổng cộng 403 request. (Huy Copper)
+  - 1.210 câu hỏi, 308 cặp trùng.
+  - 9.223 câu trả lời, đủ so với `answer_count`.
+  - 20.893 comment: comment của câu trả lời đủ; comment của câu hỏi được 3.856 trên 4.157, vì 80 câu API không trả comment.
 - [ ] Gửi mẫu cho bên model, chốt data contract lên **1.0**. (ETL + Hung)
-- [ ] Lấy dữ liệu đầy đủ theo chiến lược lấy mẫu ở [03](03_data_source.md). (ETL)
+  - [x] Hung gửi định dạng đầu vào model mong muốn (23/10): mảng JSON gồm `title`, `body`, `comments`, `tags`. Đã ghi vào data contract 0.3.
+  - [ ] Hỏi Hung về các trường ETL đề xuất thêm (`question_id`, `split`, `answers`) và file nhãn `qrels.json`. (Huy Copper)
+  - [ ] Xuất mẫu theo định dạng này rồi gửi Hung kiểm tra. (Huy Copper)
+- [ ] Lấy dữ liệu đầy đủ theo chiến lược lấy mẫu ở [03](03_data_source.md). Đã bắt đầu ngày 24/10 với `config/collect.toml` (tag `python`, 10 trang seed), dữ liệu ghi vào `data/raw/` trên máy Huy Copper. (Huy Copper)
 
 ## Giai đoạn 2: Làm sạch, tích hợp, EDA
 
 - [ ] 6 bước làm sạch và `cleaning_stats.json`. (Nguyễn Huy)
 - [ ] Nhóm trùng và chia train/val/test theo nhóm. (ETL)
-- [ ] Ghép `documents.parquet`. (ETL)
+- [ ] Ghép `documents.json` và `qrels.json` theo [04](04_data_contract.md) mục 3. (ETL)
 - [ ] Notebook EDA và biểu đồ. (ETL)
 
 ## Giai đoạn 3: Baseline

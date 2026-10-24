@@ -15,9 +15,11 @@
 
 | Cấu hình | Văn bản |
 |---|---|
-| `C` | `text_content` |
-| `C+Cm` | `text_content` + `text_comments` |
-| `C+Cm+A` (tùy chọn) | thêm `text_answers` |
+| `C` | `title` + `body` |
+| `C+Cm` | `title` + `body` + `comments` |
+| `C+Cm+A` (tùy chọn) | thêm `answers` |
+
+Các trường lấy từ `documents.json` ([04](04_data_contract.md#3-dữ-liệu-đưa-vào-model-datacleandocumentsjson)), nhãn đúng lấy từ `qrels.json`.
 
 Mỗi cấu hình chạy với **cùng model và cùng tham số**. Chỉ thay văn bản đầu vào để so sánh công bằng.
 
