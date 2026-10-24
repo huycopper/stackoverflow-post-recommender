@@ -19,6 +19,7 @@ from .client import StackExchangeClient
 from .collector import STEPS, Collector
 from .config import load_config, load_dotenv
 from .raw_store import RawStore
+from .repair import requeue_incomplete
 from .state import CollectorState
 from .summary import summarize
 
@@ -41,6 +42,12 @@ def main(argv: list[str] | None = None) -> int:
     summary = sub.add_parser("summary", help="summarise the raw data collected so far")
     summary.add_argument("--out", type=Path, default=None, help="also write the summary as JSON")
 
+    sub.add_parser(
+        "repair",
+        help="re-queue questions/answers whose answers or comments are incomplete in raw data; "
+        "then run again to fetch them",
+    )
+
     args = parser.parse_args(argv)
     logging.basicConfig(
         level=logging.INFO if args.verbose or args.command == "run" else logging.WARNING,
@@ -56,6 +63,14 @@ def main(argv: list[str] | None = None) -> int:
         if args.out:
             args.out.parent.mkdir(parents=True, exist_ok=True)
             args.out.write_text(text + "\n", encoding="utf-8")
+        return 0
+
+    if args.command == "repair":
+        state = CollectorState.load(config.paths.state_file)
+        stats = requeue_incomplete(config.paths.raw_dir, state)
+        state.save(config.paths.state_file)
+        print(json.dumps(stats, indent=2))
+        print("Now run the same config with `run` to fetch what was re-queued.")
         return 0
 
     load_dotenv()

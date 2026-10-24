@@ -24,6 +24,7 @@ _ID_SETS = (
     "question_comments_done",
     "answer_comments_done",
 )
+_COUNT_DICTS = ("answer_counts", "question_comment_counts", "answer_comment_counts")
 
 
 @dataclass
@@ -44,8 +45,14 @@ class CollectorState:
     question_comments_done: set[int] = field(default_factory=set)
     answer_comments_done: set[int] = field(default_factory=set)
     duplicate_pairs: set[tuple[int, int]] = field(default_factory=set)
-    # Step name -> number of batches that still had more pages when the page limit was hit.
+    # Expected number of children, as reported by the API, used to size batches.
+    answer_counts: dict[int, int] = field(default_factory=dict)
+    question_comment_counts: dict[int, int] = field(default_factory=dict)
+    answer_comment_counts: dict[int, int] = field(default_factory=dict)
+    # Step name -> number of batches that still had more pages when the page limit was hit,
+    # and the parent ids of those batches.
     truncated_batches: dict[str, int] = field(default_factory=dict)
+    truncated_ids: dict[str, set[int]] = field(default_factory=dict)
     requests_made: int = 0
     updated_at: str | None = None
 
@@ -55,6 +62,10 @@ class CollectorState:
             value = getattr(self, f.name)
             if f.name == "duplicate_pairs":
                 value = sorted([a, b] for a, b in value)
+            elif f.name in _COUNT_DICTS:
+                value = {str(k): v for k, v in sorted(value.items())}
+            elif f.name == "truncated_ids":
+                value = {step: sorted(ids) for step, ids in value.items()}
             elif isinstance(value, set):
                 value = sorted(value)
             out[f.name] = value
@@ -70,6 +81,10 @@ class CollectorState:
                 state.duplicate_pairs = {(int(a), int(b)) for a, b in value}
             elif name == "pages_exhausted":
                 state.pages_exhausted = set(value)
+            elif name in _COUNT_DICTS:
+                setattr(state, name, {int(k): int(v) for k, v in value.items()})
+            elif name == "truncated_ids":
+                state.truncated_ids = {step: {int(i) for i in ids} for step, ids in value.items()}
             elif hasattr(state, name):
                 setattr(state, name, value)
         return state

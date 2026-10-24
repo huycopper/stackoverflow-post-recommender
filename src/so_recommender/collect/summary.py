@@ -35,9 +35,12 @@ def summarize(raw_dir: str | Path) -> dict[str, Any]:
         endpoint = record["endpoint"]
         records_per_endpoint[endpoint] += 1
         response = record["response"]
-        # Files are read per endpoint, not in time order: keep the most recent quota.
-        if "quota_remaining" in response and record["fetched_at"] >= last_fetched_at:
-            last_fetched_at, last_quota = record["fetched_at"], response["quota_remaining"]
+        # Files are read per endpoint, not in time order: keep the most recent quota. Several
+        # responses can share one second; the quota only goes down, so the lowest is the latest.
+        if "quota_remaining" in response:
+            key = (record["fetched_at"], -response["quota_remaining"])
+            if key > (last_fetched_at, -(last_quota if last_quota is not None else 10**9)):
+                last_fetched_at, last_quota = record["fetched_at"], response["quota_remaining"]
         items = response.get("items", [])
         if endpoint in QUESTION_ENDPOINTS:
             questions.update((int(i["question_id"]), i) for i in items)
@@ -55,6 +58,7 @@ def summarize(raw_dir: str | Path) -> dict[str, Any]:
         for o in (questions[qid].get("closed_details") or {}).get("original_questions") or []
         if o.get("question_id") is not None and int(o["question_id"]) != qid
     }
+    answers_per_question = Counter(int(a["question_id"]) for a in answers.values())
     questions_with_comments = {int(c["post_id"]) for c in question_comments.values()}
     answers_with_comments = {int(c["post_id"]) for c in answer_comments.values()}
     all_comments = list(question_comments.values()) + list(answer_comments.values())
@@ -95,11 +99,19 @@ def summarize(raw_dir: str | Path) -> dict[str, Any]:
         },
         "answers": {
             "total": len(answers),
+            # Completeness against the counts the API reports; `repair` re-queues the gaps.
+            "expected_by_answer_count": sum(q.get("answer_count") or 0 for q in questions.values()),
+            "questions_missing_some": sum(
+                (q.get("answer_count") or 0) > answers_per_question[qid]
+                for qid, q in questions.items()
+            ),
             "with_comments": len(answers_with_comments & answers.keys()),
         },
         "comments": {
             "on_questions": len(question_comments),
+            "on_questions_expected": sum(q.get("comment_count") or 0 for q in questions.values()),
             "on_answers": len(answer_comments),
+            "on_answers_expected": sum(a.get("comment_count") or 0 for a in answers.values()),
             "leaky_duplicate_mentions": sum(
                 bool(LEAKY_COMMENT_RE.search(c.get("body", ""))) for c in all_comments
             ),

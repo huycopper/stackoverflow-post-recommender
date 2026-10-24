@@ -168,6 +168,12 @@ def test_summary_reports_counts(tmp_path, clock):
     assert result["questions"]["comment_count_but_none_returned"] == 0
     assert result["last_quota_remaining"] == 9000
     assert result["duplicate_pairs"] == {"total": 4, "original_fetched": 3, "original_missing": 1}
-    assert result["answers"] == {"total": 1, "with_comments": 1}
+    assert result["answers"] == {
+        "total": 1,
+        "expected_by_answer_count": 1,
+        "questions_missing_some": 0,
+        "with_comments": 1,
+    }
+    assert result["comments"]["on_questions_expected"] == 3
     assert result["comments"]["leaky_duplicate_mentions"] == 1
     assert "closed_details" in result["fields"]["question"]

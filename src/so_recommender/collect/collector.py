@@ -52,6 +52,27 @@ def chunks(ids: Iterable[int], size: int = BATCH_SIZE) -> Iterator[list[int]]:
         yield ordered[start : start + size]
 
 
+def pack(
+    ids: Iterable[int], counts: dict[int, int], max_items: int, max_ids: int = BATCH_SIZE
+) -> Iterator[list[int]]:
+    """Group parent ids so one batch returns about `max_items` children (a few pages).
+
+    `counts` holds the expected number of children (answer_count / comment_count). A parent
+    with more children than `max_items` gets a batch of its own; its pages are all fetched.
+    """
+    batch: list[int] = []
+    total = 0
+    for parent in sorted(ids):
+        n = max(1, counts.get(parent, 1))
+        if batch and (total + n > max_items or len(batch) == max_ids):
+            yield batch
+            batch, total = [], 0
+        batch.append(parent)
+        total += n
+    if batch:
+        yield batch
+
+
 class Collector:
     def __init__(
         self,
@@ -151,51 +172,58 @@ class Collector:
                 self._save()
 
     def step_answers(self) -> None:
-        pending = self.state.fetched_question_ids - self.state.answers_done
-        for batch in chunks(pending):
-            path = f"/questions/{';'.join(map(str, batch))}/answers"
-            for data in self._pages(
-                "answers",
-                path,
-                {"sort": "votes", "order": "desc"},
-                self.sample.answer_pages_per_batch,
-                step="answers",
-            ):
-                self._ingest_answers(data["items"])
-            self.state.answers_done.update(batch)
-            self._save()
+        self._children(
+            "answers",
+            self.state.fetched_question_ids - self.state.answers_done,
+            self.state.answer_counts,
+            "/questions/{ids}/answers",
+            {"sort": "votes", "order": "desc"},
+            self.state.answers_done,
+            ingest=self._ingest_answers,
+        )
 
     def step_question_comments(self) -> None:
-        pending = self.state.fetched_question_ids - self.state.question_comments_done
-        for batch in chunks(pending):
-            path = f"/questions/{';'.join(map(str, batch))}/comments"
-            for _ in self._pages(
-                "question_comments",
-                path,
-                {"sort": "creation", "order": "asc"},
-                self.sample.comment_pages_per_batch,
-                step="question_comments",
-            ):
-                pass  # comments are only stored raw; nothing to track
-            self.state.question_comments_done.update(batch)
-            self._save()
+        self._children(
+            "question_comments",
+            self.state.fetched_question_ids - self.state.question_comments_done,
+            self.state.question_comment_counts,
+            "/questions/{ids}/comments",
+            {"sort": "creation", "order": "asc"},
+            self.state.question_comments_done,
+        )
 
     def step_answer_comments(self) -> None:
-        pending = self.state.answer_ids - self.state.answer_comments_done
-        for batch in chunks(pending):
-            path = f"/answers/{';'.join(map(str, batch))}/comments"
-            for _ in self._pages(
-                "answer_comments",
-                path,
-                {"sort": "creation", "order": "asc"},
-                self.sample.comment_pages_per_batch,
-                step="answer_comments",
-            ):
-                pass
-            self.state.answer_comments_done.update(batch)
-            self._save()
+        self._children(
+            "answer_comments",
+            self.state.answer_ids - self.state.answer_comments_done,
+            self.state.answer_comment_counts,
+            "/answers/{ids}/comments",
+            {"sort": "creation", "order": "asc"},
+            self.state.answer_comments_done,
+        )
 
     # Helpers -----------------------------------------------------------------------------
+
+    def _children(
+        self,
+        step: str,
+        pending: set[int],
+        counts: dict[int, int],
+        path_template: str,
+        params: dict[str, Any],
+        done: set[int],
+        ingest=None,
+    ) -> None:
+        """Fetch all answers or comments of `pending` parents, in batches sized by `counts`."""
+        for batch in pack(pending, counts, self.sample.items_per_batch):
+            path = path_template.format(ids=";".join(map(str, batch)))
+            for data in self._pages(
+                step, path, params, self.sample.max_pages_per_batch, step=step, ids=batch
+            ):
+                if ingest:
+                    ingest(data["items"])
+            done.update(batch)
+            self._save()
 
     def _listing(self, key: str, params: dict[str, Any], max_pages: int, role: set[int]) -> None:
         start = self.state.pages_done.get(key, 0) + 1
@@ -214,7 +242,14 @@ class Collector:
             self._save()
 
     def _pages(
-        self, endpoint: str, path: str, params: dict[str, Any], max_pages: int, *, step: str
+        self,
+        endpoint: str,
+        path: str,
+        params: dict[str, Any],
+        max_pages: int,
+        *,
+        step: str,
+        ids: Iterable[int] = (),
     ) -> Iterator[dict[str, Any]]:
         for page in range(1, max_pages + 1):
             data = self._fetch(
@@ -225,8 +260,11 @@ class Collector:
             yield data
             if not data.get("has_more"):
                 return
+        # Still more pages after the limit: remember which parents may be incomplete.
         truncated = self.state.truncated_batches
         truncated[step] = truncated.get(step, 0) + 1
+        self.state.truncated_ids.setdefault(step, set()).update(ids)
+        log.warning("%s: page limit %d reached for %s", step, max_pages, path[:60])
 
     def _fetch(
         self, endpoint: str, path: str, params: dict[str, Any], *, site_scoped: bool = True
@@ -257,6 +295,10 @@ class Collector:
             qid = int(q["question_id"])
             ids.add(qid)
             self.state.fetched_question_ids.add(qid)
+            if "answer_count" in q:
+                self.state.answer_counts[qid] = int(q["answer_count"])
+            if "comment_count" in q:
+                self.state.question_comment_counts[qid] = int(q["comment_count"])
             # Nothing to fetch later for questions without answers or comments.
             if q.get("answer_count") == 0:
                 self.state.answers_done.add(qid)
@@ -276,6 +318,8 @@ class Collector:
         for a in items:
             aid = int(a["answer_id"])
             self.state.answer_ids.add(aid)
+            if "comment_count" in a:
+                self.state.answer_comment_counts[aid] = int(a["comment_count"])
             if a.get("comment_count") == 0:
                 self.state.answer_comments_done.add(aid)
 

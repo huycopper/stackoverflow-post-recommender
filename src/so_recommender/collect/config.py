@@ -30,8 +30,10 @@ class SampleSettings:
     background_pages_per_tag: int = 1
     background_sort: str = "activity"
     original_rounds: int = 3
-    answer_pages_per_batch: int = 5
-    comment_pages_per_batch: int = 5
+    # Answers / comments: batches are sized to about this many items (pages of 100), and all
+    # their pages are fetched; max_pages_per_batch is only a safety net.
+    items_per_batch: int = 500
+    max_pages_per_batch: int = 50
 
 
 @dataclass(frozen=True)
