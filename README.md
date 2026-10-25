@@ -76,4 +76,19 @@ uv run python -m so_recommender.collect summary --out reports/collect_summary.js
   uv run python -m so_recommender.collect run --steps answers question_comments answer_comments
   ```
 - Khi gần hết quota, bị API throttle hoặc bị ngắt (Ctrl+C), chương trình **tự dừng và lưu tiến độ**. Chạy lại đúng lệnh cũ để tiếp tục.
+- Mỗi lúc chỉ được có **một** lần chạy dùng cùng một file state. Nếu đang có lần chạy khác thì lệnh mới dừng ngay, trả mã 3 (khóa nằm ở `data/collect_state.lock`).
+- `--log-file data/logs/x.log` ghi log ra file thay vì ra màn hình.
 - Chi tiết các bước và chiến lược lấy mẫu xem [docs/03_data_source.md](docs/03_data_source.md).
+
+### Chạy tự động mỗi ngày (Windows)
+
+Trên máy Huy Copper có một lịch Task Scheduler tên **"SO Recommender - daily collect"**. Lịch này chạy [scripts/collect_daily.ps1](scripts/collect_daily.ps1) lúc **22:00 mỗi ngày**, và chạy bù nếu lúc đó máy đang tắt. Log ghi ở `data/logs/collect_YYYYMMDD_HHMM.log`. Mã thoát của script: 0 là đã lấy xong hết, 2 là tạm dừng vì quota (hôm sau chạy tiếp), 3 là đang có lần chạy khác.
+
+```powershell
+Get-ScheduledTask -TaskName "SO Recommender - daily collect" | Get-ScheduledTaskInfo   # lần chạy gần nhất / tiếp theo
+Start-ScheduledTask -TaskName "SO Recommender - daily collect"                          # chạy ngay
+Disable-ScheduledTask -TaskName "SO Recommender - daily collect"                        # tạm tắt lịch
+Unregister-ScheduledTask -TaskName "SO Recommender - daily collect"                     # xóa lịch
+```
+
+Máy khác muốn tạo lịch giống vậy thì xem lệnh `Register-ScheduledTask` trong [docs/03_data_source.md](docs/03_data_source.md#chạy-tự-động-mỗi-ngày).

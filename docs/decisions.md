@@ -45,13 +45,18 @@ Mỗi quyết định ghi: **ngày, quyết định, lý do, người chốt**. 
 - **Lý do:** bên model cần một định dạng thống nhất để mỗi bên làm một phần ("thống nhất format data dùng cho model xong mỗi bên làm 1 thành phần").
 - **Người chốt:** Hung (nhóm Messenger, 23/10/2026 20:37). ETL đề xuất thêm `question_id`, `split`, `answers` và file nhãn `qrels.json`, đang chờ Hung xác nhận.
 
+### D10. Thu thập càng nhiều càng tốt, chạy tự động mỗi ngày (25/10/2026)
+- **Quyết định:** tăng `seed_pages_per_tag` lên 100 và chạy bộ thu thập lúc 22:00 mỗi ngày bằng Task Scheduler trên máy Huy Copper ([03](03_data_source.md#chạy-tự-động-mỗi-ngày)). Việc làm sạch để sau, khi Huy Copper và Nguyễn Huy đã xem dữ liệu và tìm insight.
+- **Lý do:** Hung chưa biết cần bao nhiêu dữ liệu, và đề xuất "chạy crawl tự động, cho hết data thô vào 1 chỗ rồi viết code xử lý song song". Quota giới hạn 10.000 request/ngày nên phải chạy qua nhiều ngày.
+- **Người chốt:** Huy Copper, theo đề xuất của Hung.
+
 ## Câu hỏi mở
 
 | # | Câu hỏi | Ai chốt | Trạng thái |
 |---|---|---|---|
 | Q1 | Báo TA việc đổi nguồn sang Stack Overflow, Stack Overflow có tính là "social media" không | ? | Chưa hỏi lại |
 | Q2 | Lưu trữ: Python + Parquet/SQL, hay lakehouse/Spark | Nguyễn Huy | Đang cân nhắc. Đề xuất Python ([06](06_architecture.md#lưu-trữ)) |
-| Q3 | Phạm vi tag: `python`, hay thêm `pandas`, hay tag khác | ETL | Lần chạy đầy đủ đầu tiên (24/10): chỉ `python`, 10 trang seed. Muốn thêm tag thì thêm vào `config/collect.toml` rồi chạy tiếp |
+| Q3 | Phạm vi tag: `python`, hay thêm `pandas`, hay tag khác | ETL | Chỉ `python`. 10 trang seed (24/10), rồi tăng lên 100 trang (25/10, D10). Muốn thêm tag thì thêm vào `config/collect.toml`, lịch hằng ngày sẽ lấy tiếp |
 | Q4 | Data contract lên 1.0 | ETL + Hung | Hung đã gửi định dạng (D9). Còn chờ Hung trả lời các trường bổ sung và cách lưu nhãn ([04](04_data_contract.md#câu-hỏi-mở-cần-chốt-với-bên-model)) |
 | Q5 | Ai làm phần "Training + viết báo cáo" | Nam, Hoàng | Chưa chọn |
 | Q6 | Có fine-tune model không | Hung | Chưa chốt ([07](07_modeling_eval.md)) |

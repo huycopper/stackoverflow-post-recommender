@@ -23,7 +23,14 @@ Cập nhật lần cuối: **23/10/2026**. Ngày báo cáo tiến độ và báo
   - [x] Hung gửi định dạng đầu vào model mong muốn (23/10): mảng JSON gồm `title`, `body`, `comments`, `tags`. Đã ghi vào data contract 0.3.
   - [ ] Hỏi Hung về các trường ETL đề xuất thêm (`question_id`, `split`, `answers`) và file nhãn `qrels.json`. (Huy Copper)
   - [ ] Xuất mẫu theo định dạng này rồi gửi Hung kiểm tra. (Huy Copper)
-- [ ] Lấy dữ liệu đầy đủ theo chiến lược lấy mẫu ở [03](03_data_source.md). Đã bắt đầu ngày 24/10 với `config/collect.toml` (tag `python`, 10 trang seed), dữ liệu ghi vào `data/raw/` trên máy Huy Copper. (Huy Copper)
+- [x] Lần thu thập đầy đủ đầu tiên (24–25/10, `config/collect.toml`: tag `python`, 10 trang seed). Tốn 2.185 request, dữ liệu 60 MB trong `data/raw/` trên máy Huy Copper, tóm tắt ở `data/exports/full_summary_20261025.json`. (Huy Copper)
+  - **10.011 câu hỏi**: 1.000 seed, 100 background, còn lại là câu liên kết và câu gốc. 2.451 câu bị đóng vì trùng, ra **2.972 cặp trùng**, đủ cả câu gốc.
+  - 50.271 câu trả lời: thiếu 1 câu so với `answer_count`, ở 2 câu hỏi.
+  - Comment: 87.898 comment của câu trả lời (đủ). 29.460 trên 30.835 comment của câu hỏi, vì có 353 câu API không trả comment. 1.578 comment làm lộ đáp án, cần lọc.
+  - 76% câu hỏi có comment. Trong các câu trùng, 1.750 trên 2.451 câu (71%) có comment.
+  - Cả 100 batch `linked` đều chạm giới hạn 3 trang. Muốn thêm câu trùng thì tăng `seed_pages_per_tag` rồi chạy tiếp.
+- [ ] Thu thập càng nhiều càng tốt (D10): 100 trang seed, chạy tự động 22:00 mỗi ngày từ 25/10, dự kiến xong sau khoảng 3–4 ngày. Log ở `data/logs/`. (Huy Copper)
+- [ ] Huy Copper và Nguyễn Huy xem dữ liệu, tìm insight, chốt các bước làm sạch. (ETL)
 
 ## Giai đoạn 2: Làm sạch, tích hợp, EDA
 

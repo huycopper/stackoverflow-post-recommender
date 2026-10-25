@@ -77,6 +77,34 @@ Ngày 23/10/2026, vài request thử gọi `/questions/{ids}/linked` liên tiế
 
 Ước lượng: một trang lấy được 100 câu hỏi. Mỗi 100 câu hỏi tốn khoảng 10–20 request cho câu trả lời và comment. Với key 10.000 request/ngày, lấy được vài chục nghìn câu hỏi trong 1–2 ngày.
 
+Số liệu thật: lần chạy 24–25/10 với 10 trang seed (1.000 seed) tốn 2.185 request và cho 10.011 câu hỏi, 2.972 cặp trùng.
+
+## Thu thập càng nhiều càng tốt (từ 25/10/2026)
+
+Hung chưa chốt cần bao nhiêu dữ liệu, nên tạm thời nhóm **thu thập càng nhiều càng tốt** (D10):
+
+- `seed_pages_per_tag = 100` (10.000 seed). Mỗi ngày bộ thu thập chạy tới khi gần hết quota thì dừng, hôm sau chạy tiếp. Dự kiến mất khoảng 3–4 ngày, được khoảng 100 nghìn câu hỏi và khoảng 600 MB raw.
+- Các trang seed càng về sau thì câu hỏi càng ít "kinh điển", nên mỗi seed cho ít câu trùng hơn.
+- Việc làm sạch **chưa làm**. Huy Copper và Nguyễn Huy sẽ xem dữ liệu, tìm insight trước, rồi mới thống nhất cần xử lý những gì.
+
+## Chạy tự động mỗi ngày
+
+`scripts/collect_daily.ps1` chạy bộ thu thập với `config/collect.toml` và ghi log vào `data/logs/`. Trên máy Huy Copper, script này được đặt lịch chạy 22:00 mỗi ngày (tạo ngày 25/10/2026). Tạo lịch giống vậy trên máy Windows khác (PowerShell, chạy dưới tài khoản của mình):
+
+```powershell
+$repo = "<đường dẫn tới repo>"
+$action = New-ScheduledTaskAction -Execute "powershell.exe" -WorkingDirectory $repo `
+  -Argument "-NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File `"$repo\scripts\collect_daily.ps1`""
+$trigger = New-ScheduledTaskTrigger -Daily -At "22:00"
+$settings = New-ScheduledTaskSettingsSet -StartWhenAvailable -AllowStartIfOnBatteries `
+  -DontStopIfGoingOnBatteries -MultipleInstances IgnoreNew -ExecutionTimeLimit (New-TimeSpan -Hours 20)
+Register-ScheduledTask -TaskName "SO Recommender - daily collect" -Action $action -Trigger $trigger -Settings $settings
+```
+
+- Lịch chỉ chạy khi người dùng đang đăng nhập và máy không ngủ. Nếu lỡ giờ thì chạy bù ngay khi có thể (`-StartWhenAvailable`).
+- Khóa `data/collect_state.lock` đảm bảo lịch và lần chạy tay không chạy chồng lên nhau.
+- **Chỉ một máy được chạy bộ thu thập cho mỗi bộ dữ liệu.** Quota tính theo key và IP, và state nằm trên máy đó.
+
 ## Bản quyền
 
 Nội dung Stack Overflow được cấp phép theo **CC BY-SA**. Khi trích ví dụ trong báo cáo hoặc slide cần ghi nguồn (link câu hỏi). Ghi chú này vào phần "Khó khăn và đạo đức dữ liệu" của báo cáo.
