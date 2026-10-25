@@ -7,9 +7,12 @@ from __future__ import annotations
 
 import json
 import os
+import time
 from dataclasses import dataclass, field, fields
 from datetime import UTC, datetime
 from pathlib import Path
+
+REPLACE_RETRIES = 10  # about 11 s of waiting in total before giving up
 
 _ID_SETS = (
     "seed_ids",
@@ -89,14 +92,24 @@ class CollectorState:
                 setattr(state, name, value)
         return state
 
-    def save(self, path: str | Path) -> None:
+    def save(self, path: str | Path, *, sleep=time.sleep) -> None:
         """Write atomically so a crash never leaves a half-written state file."""
         path = Path(path)
         path.parent.mkdir(parents=True, exist_ok=True)
         self.updated_at = datetime.now(UTC).isoformat(timespec="seconds")
         tmp = path.with_suffix(path.suffix + ".tmp")
-        tmp.write_text(json.dumps(self.to_json(), indent=1), encoding="utf-8")
-        os.replace(tmp, path)
+        # Compact JSON: with ~100k ids the indented file was 13 MB.
+        tmp.write_text(json.dumps(self.to_json(), separators=(",", ":")), encoding="utf-8")
+        # On Windows the rename fails with "Access is denied" while another program (antivirus,
+        # search indexer) briefly holds the old file open. That crashed a run on 25/10: retry.
+        for attempt in range(REPLACE_RETRIES):
+            try:
+                os.replace(tmp, path)
+                return
+            except PermissionError:
+                if attempt == REPLACE_RETRIES - 1:
+                    raise
+                sleep(0.2 * (attempt + 1))
 
     @classmethod
     def load(cls, path: str | Path) -> CollectorState:

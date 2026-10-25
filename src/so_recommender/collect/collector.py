@@ -8,6 +8,7 @@ reasoning: docs/03_data_source.md.
 from __future__ import annotations
 
 import logging
+import time
 from collections.abc import Iterable, Iterator
 from pathlib import Path
 from typing import Any
@@ -31,6 +32,7 @@ STEPS = (
 )
 
 BATCH_SIZE = 100  # the API accepts at most 100 ids per vectorized request
+SAVE_INTERVAL_SECONDS = 30.0
 
 # Fields added to the built-in "withbody" filter. closed_details carries the original
 # questions of a duplicate, which is our ground truth.
@@ -82,6 +84,8 @@ class Collector:
         state_path: str | Path,
         sample: SampleSettings,
         pagesize: int = 100,
+        save_interval: float = SAVE_INTERVAL_SECONDS,
+        clock=time.monotonic,
     ) -> None:
         self.client = client
         self.raw = raw
@@ -89,6 +93,9 @@ class Collector:
         self.state_path = Path(state_path)
         self.sample = sample
         self.pagesize = pagesize
+        self.save_interval = save_interval
+        self._clock = clock
+        self._last_save: float | None = None
 
     def run(self, steps: Iterable[str] = STEPS) -> bool:
         """Run the given steps in order. Returns False if collection had to stop early."""
@@ -105,7 +112,7 @@ class Collector:
             log.warning("stopped early: %s. Run the same command again to resume.", stop)
             return False
         finally:
-            self._save()
+            self._save(force=True)
         return True
 
     # Steps -------------------------------------------------------------------------------
@@ -116,7 +123,7 @@ class Collector:
         params = {"base": "withbody", "include": ";".join(FILTER_INCLUDE), "unsafe": "false"}
         data = self._fetch("filters", "/filters/create", params, site_scoped=False)
         self.state.filter = data["items"][0]["filter"]
-        self._save()
+        self._save(force=True)
 
     def step_seed(self) -> None:
         for tag in self.sample.tags:
@@ -323,5 +330,15 @@ class Collector:
             if a.get("comment_count") == 0:
                 self.state.answer_comments_done.add(aid)
 
-    def _save(self) -> None:
+    def _save(self, force: bool = False) -> None:
+        """Save progress, at most every `save_interval` seconds unless forced.
+
+        The state of a big collection is several MB; writing it after every batch was slow and
+        clashed with other programs opening the file. Losing up to `save_interval` seconds of
+        progress only means a few batches are fetched again (raw may hold duplicates anyway).
+        """
+        now = self._clock()
+        if not force and self._last_save is not None and now - self._last_save < self.save_interval:
+            return
         self.state.save(self.state_path)
+        self._last_save = now
