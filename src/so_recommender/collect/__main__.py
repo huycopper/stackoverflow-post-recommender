@@ -18,6 +18,7 @@ from pathlib import Path
 from .client import StackExchangeClient
 from .collector import STEPS, Collector
 from .config import load_config, load_dotenv
+from .lock import AlreadyRunning, exclusive_lock
 from .raw_store import RawStore
 from .repair import requeue_incomplete
 from .state import CollectorState
@@ -28,6 +29,9 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="python -m so_recommender.collect")
     parser.add_argument("--config", default="config/collect.toml", help="TOML settings file")
     parser.add_argument("-v", "--verbose", action="store_true", help="log every request")
+    parser.add_argument(
+        "--log-file", type=Path, default=None, help="append the log to this file (UTF-8)"
+    )
     sub = parser.add_subparsers(dest="command", required=True)
 
     run = sub.add_parser("run", help="collect raw data (resumable)")
@@ -49,10 +53,16 @@ def main(argv: list[str] | None = None) -> int:
     )
 
     args = parser.parse_args(argv)
+    handlers: list[logging.Handler] = [logging.StreamHandler()]
+    if args.log_file:
+        args.log_file.parent.mkdir(parents=True, exist_ok=True)
+        handlers = [logging.FileHandler(args.log_file, encoding="utf-8")]
     logging.basicConfig(
         level=logging.INFO if args.verbose or args.command == "run" else logging.WARNING,
         format="%(asctime)s %(levelname)s %(message)s",
-        datefmt="%H:%M:%S",
+        datefmt="%Y-%m-%d %H:%M:%S" if args.log_file else "%H:%M:%S",
+        handlers=handlers,
+        force=True,  # replace handlers set up earlier (e.g. by a test runner)
     )
     config = load_config(args.config)
 
@@ -97,7 +107,11 @@ def main(argv: list[str] | None = None) -> int:
         pagesize=config.api.pagesize,
     )
     try:
-        finished = collector.run(args.steps)
+        with exclusive_lock(config.paths.state_file.with_suffix(".lock")):
+            finished = collector.run(args.steps)
+    except AlreadyRunning as err:
+        logging.warning("not started: %s. Wait for that run to finish.", err)
+        return 3
     except KeyboardInterrupt:
         logging.warning("interrupted; progress saved. Run the same command again to resume.")
         return 130
