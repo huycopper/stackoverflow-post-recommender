@@ -6,6 +6,7 @@ from so_recommender.collect.client import (
     ApiError,
     QuotaExhausted,
     RequestBudgetReached,
+    RetriesExhausted,
     StackExchangeClient,
     Throttled,
 )
@@ -155,5 +156,6 @@ def test_network_error_retries_then_gives_up(api, clock):
         raise TimeoutError("timed out")
 
     client = make_client(api, clock, transport=broken, max_retries=2)
-    with pytest.raises(RuntimeError, match="giving up"):
+    # a StopCollection: the run pauses (state saved) instead of crashing
+    with pytest.raises(RetriesExhausted, match="giving up"):
         client.get("/questions")

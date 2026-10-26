@@ -115,6 +115,10 @@ def main(argv: list[str] | None = None) -> int:
     except KeyboardInterrupt:
         logging.warning("interrupted; progress saved. Run the same command again to resume.")
         return 130
+    except Exception:
+        # Unattended runs only leave the log behind, so the traceback must go there too.
+        logging.exception("run failed; progress up to the last save is kept")
+        return 1
     logging.info(
         "%s: %d requests this run, quota_remaining=%s, %d questions, %d duplicate pairs",
         "done" if finished else "paused",

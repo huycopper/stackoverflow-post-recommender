@@ -31,3 +31,23 @@ def test_run_does_not_start_while_another_run_holds_the_lock(tmp_path):
     assert code == 3
     assert "not started" in log.read_text(encoding="utf-8")
     assert not (tmp_path / "raw").exists()
+
+
+def test_unexpected_errors_are_written_to_the_log(tmp_path, monkeypatch):
+    from so_recommender.collect.collector import Collector
+
+    def boom(self, steps):
+        raise ValueError("unexpected")
+
+    monkeypatch.setattr(Collector, "run", boom)
+    config = tmp_path / "collect.toml"
+    config.write_text(
+        f'[paths]\nraw_dir = "{(tmp_path / "raw").as_posix()}"\n'
+        f'state_file = "{(tmp_path / "state.json").as_posix()}"\n',
+        encoding="utf-8",
+    )
+    log = tmp_path / "run.log"
+    code = main(["--config", str(config), "--log-file", str(log), "run", "--max-requests", "0"])
+    assert code == 1
+    text = log.read_text(encoding="utf-8")
+    assert "run failed" in text and "ValueError: unexpected" in text

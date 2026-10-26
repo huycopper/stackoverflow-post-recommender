@@ -29,7 +29,12 @@ Cập nhật lần cuối: **23/10/2026**. Ngày báo cáo tiến độ và báo
   - Comment: 87.898 comment của câu trả lời (đủ). 29.460 trên 30.835 comment của câu hỏi, vì có 353 câu API không trả comment. 1.578 comment làm lộ đáp án, cần lọc.
   - 76% câu hỏi có comment. Trong các câu trùng, 1.750 trên 2.451 câu (71%) có comment.
   - Cả 100 batch `linked` đều chạm giới hạn 3 trang. Muốn thêm câu trùng thì tăng `seed_pages_per_tag` rồi chạy tiếp.
-- [ ] Thu thập càng nhiều càng tốt (D10): 100 trang seed, chạy tự động 22:00 mỗi ngày từ 25/10, dự kiến xong sau khoảng 3–4 ngày. Log ở `data/logs/`. (Huy Copper)
+- [x] Thu thập càng nhiều càng tốt (D10): 100 trang seed, xong lúc 22:12 ngày 25/10 sau 3 lần chạy (13.103 request), dữ liệu 376 MB trong `data/raw/`, tóm tắt ở `data/exports/full_summary_20261026.json`. (Huy Copper)
+  - **93.704 câu hỏi**: 10.000 seed, 100 background, còn lại là câu liên kết và câu gốc. 20.103 câu bị đóng vì trùng, ra **23.470 cặp trùng**. Thiếu 3 câu gốc vì đã bị xóa.
+  - 257.960 câu trả lời: thiếu 1 câu so với `answer_count`.
+  - Comment: 392.490 comment của câu trả lời (đủ). 254.893 trên 258.630 comment của câu hỏi, vì có 935 câu API không trả comment. 14.986 comment làm lộ đáp án, cần lọc.
+  - 76% câu hỏi có comment. Trong các câu trùng, 15.402 trên 20.103 câu (77%) có comment.
+  - Lịch 22:00 vẫn bật. Với cấu hình hiện tại thì không còn gì để lấy, nên mỗi lần chạy sẽ xong ngay. Muốn lấy thêm thì tăng `seed_pages_per_tag` hoặc thêm tag.
 - [ ] Huy Copper và Nguyễn Huy xem dữ liệu, tìm insight, chốt các bước làm sạch. (ETL)
 
 ## Giai đoạn 2: Làm sạch, tích hợp, EDA

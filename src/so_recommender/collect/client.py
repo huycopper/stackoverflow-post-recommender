@@ -47,6 +47,10 @@ class Throttled(StopCollection):
     """The API keeps throttling us even after waiting; try again later."""
 
 
+class RetriesExhausted(StopCollection):
+    """Requests keep failing (network down, timeouts, broken responses); try again later."""
+
+
 class ApiError(RuntimeError):
     def __init__(self, error_id: int, error_name: str, message: str) -> None:
         super().__init__(f"{error_name} ({error_id}): {message}")
@@ -168,7 +172,8 @@ class StackExchangeClient:
 
     def _retry_after_failure(self, attempt: int, reason: str) -> int:
         if attempt >= self.max_retries:
-            raise RuntimeError(f"giving up after {attempt + 1} attempts: {reason}")
+            # e.g. the internet connection dropped for ~10 minutes on 25/10: pause, do not crash
+            raise RetriesExhausted(f"giving up after {attempt + 1} attempts: {reason}")
         # A request that timed out may still have been served with a `backoff` we never saw,
         # so wait generously: retrying a few seconds later caused "Violation of backoff".
         wait = min(30 * 2**attempt, 300)
