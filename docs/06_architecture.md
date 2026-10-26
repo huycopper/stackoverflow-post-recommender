@@ -7,6 +7,7 @@ Stack Exchange API
       │  collect (quota, backoff, resume)
       ▼
 data/raw/            JSONL.gz, response nguyên văn, chỉ ghi thêm
+      │  ├─ explore flatten ─► data/flat/*.parquet (chưa sạch, để khám phá) ─► explore excel
       │  clean + integrate (6 bước, xem 05)
       ▼
 data/clean/          Parquet theo data contract (04)
@@ -53,6 +54,9 @@ Môn học bắt buộc khai báo mọi thư viện, model và code có sẵn tr
 |---|---|---|
 | Python standard library (`urllib`, `gzip`, `json`, `tomllib`) | Gọi API, lưu raw, đọc config | collect |
 | Stack Exchange API v2.3 | Nguồn dữ liệu | collect |
+| pyarrow | Bảng Parquet và thống kê trong `explore` | explore |
+| openpyxl | File Excel khám phá dữ liệu | explore |
+| tzdata | Dữ liệu múi giờ cho timestamp UTC trên Windows | explore |
 | pytest | Test | dev |
 | ruff | Lint, format | dev |
 | uv | Quản lý môi trường | dev |

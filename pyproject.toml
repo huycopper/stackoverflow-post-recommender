@@ -8,6 +8,12 @@ dependencies = []
 
 [dependency-groups]
 dev = ["pytest>=8", "ruff>=0.6"]
+# Flat Parquet tables and the Excel workbook for exploring the raw data (so_recommender.explore).
+# tzdata: Windows has no time zone database, which pyarrow needs for the UTC timestamps.
+explore = ["pyarrow>=17", "openpyxl>=3.1", "tzdata"]
+
+[tool.uv]
+default-groups = ["dev", "explore"]
 
 [build-system]
 requires = ["hatchling"]

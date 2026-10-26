@@ -82,7 +82,7 @@ uv run python -m so_recommender.collect summary --out reports/collect_summary.js
 
 ### Chạy tự động mỗi ngày (Windows)
 
-Trên máy Huy Copper có một lịch Task Scheduler tên **"SO Recommender - daily collect"**. Lịch này chạy [scripts/collect_daily.ps1](scripts/collect_daily.ps1) lúc **22:00 mỗi ngày**, và chạy bù nếu lúc đó máy đang tắt. Log ghi ở `data/logs/collect_YYYYMMDD_HHMM.log`. Mã thoát của script: 0 là đã lấy xong hết, 2 là tạm dừng vì quota (hôm sau chạy tiếp), 3 là đang có lần chạy khác.
+Trên máy Huy Copper có một lịch Task Scheduler tên **"SO Recommender - daily collect"**. Lịch này chạy [scripts/collect_daily.ps1](scripts/collect_daily.ps1) lúc **22:00 mỗi ngày**, và chạy bù nếu lúc đó máy đang tắt. **Từ 26/10/2026 lịch đang tắt (Disabled)** vì đã thu thập đủ (D11). Muốn bật lại: `Enable-ScheduledTask -TaskName "SO Recommender - daily collect"`. Log ghi ở `data/logs/collect_YYYYMMDD_HHMM.log`. Mã thoát của script: 0 là đã lấy xong hết, 2 là tạm dừng vì quota (hôm sau chạy tiếp), 3 là đang có lần chạy khác.
 
 ```powershell
 Get-ScheduledTask -TaskName "SO Recommender - daily collect" | Get-ScheduledTaskInfo   # lần chạy gần nhất / tiếp theo
@@ -92,3 +92,21 @@ Unregister-ScheduledTask -TaskName "SO Recommender - daily collect"             
 ```
 
 Máy khác muốn tạo lịch giống vậy thì xem lệnh `Register-ScheduledTask` trong [docs/03_data_source.md](docs/03_data_source.md#chạy-tự-động-mỗi-ngày).
+
+## Xuất dữ liệu để khám phá
+
+Dùng để xem dữ liệu và tìm insight **trước khi** chốt các bước làm sạch. Dữ liệu ở đây **chưa làm sạch**: body vẫn là HTML, comment chưa lọc.
+
+```bash
+uv run python -m so_recommender.explore flatten   # data/raw -> data/flat/*.parquet
+uv run python -m so_recommender.explore excel     # data/flat -> data/exports/explore_<ngày>.xlsx
+```
+
+- **`data/flat/`** có 4 bảng Parquet: `questions`, `answers`, `comments`, `duplicate_pairs`. Mỗi bản ghi chỉ giữ một lần, theo lần xuất hiện đầu tiên trong raw.
+  - Đọc bằng pandas: `pd.read_parquet("data/flat/comments.parquet")`.
+  - Nạp được vào Postgres, DuckDB hoặc Spark.
+  - Đây là bản phẳng để khám phá, **không phải** data contract. Định dạng có thể đổi.
+- **File Excel** có:
+  - Thống kê trên **toàn bộ** dữ liệu: số comment và số câu trả lời trên mỗi câu hỏi, độ dài, dấu hiệu chất lượng, comment lộ đáp án, năm đăng, tag, kích thước nhóm trùng.
+  - Các mẫu ngẫu nhiên để đọc: cặp trùng đặt cạnh câu gốc, comment lộ đáp án, comment bình thường, câu hỏi. Mẫu dùng seed cố định (`--seed 42`) nên xuất lại vẫn ra đúng mẫu đó.
+- `data/` không có trong git. Muốn chia sẻ cho người khác thì nén `data/flat/` hoặc gửi file Excel qua Drive.

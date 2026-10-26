@@ -34,7 +34,9 @@ Cập nhật lần cuối: **23/10/2026**. Ngày báo cáo tiến độ và báo
   - 257.960 câu trả lời: thiếu 1 câu so với `answer_count`.
   - Comment: 392.490 comment của câu trả lời (đủ). 254.893 trên 258.630 comment của câu hỏi, vì có 935 câu API không trả comment. 14.986 comment làm lộ đáp án, cần lọc.
   - 76% câu hỏi có comment. Trong các câu trùng, 15.402 trên 20.103 câu (77%) có comment.
-  - Lịch 22:00 vẫn bật. Với cấu hình hiện tại thì không còn gì để lấy, nên mỗi lần chạy sẽ xong ngay. Muốn lấy thêm thì tăng `seed_pages_per_tag` hoặc thêm tag.
+  - Đã dừng thu thập và tắt lịch 22:00 ngày 26/10 (D11). Muốn lấy thêm thì tăng `seed_pages_per_tag` hoặc thêm tag, rồi bật lại lịch.
+- [x] Xuất dữ liệu để khám phá: `data/flat/*.parquet` và `data/exports/explore_20261026.xlsx` (26/10). (Huy Copper)
+- [ ] Gửi file Excel và `data/flat/` cho Nguyễn Huy. (Huy Copper)
 - [ ] Huy Copper và Nguyễn Huy xem dữ liệu, tìm insight, chốt các bước làm sạch. (ETL)
 
 ## Giai đoạn 2: Làm sạch, tích hợp, EDA

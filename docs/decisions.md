@@ -50,6 +50,11 @@ Mỗi quyết định ghi: **ngày, quyết định, lý do, người chốt**. 
 - **Lý do:** Hung chưa biết cần bao nhiêu dữ liệu, và đề xuất "chạy crawl tự động, cho hết data thô vào 1 chỗ rồi viết code xử lý song song". Quota giới hạn 10.000 request/ngày nên phải chạy qua nhiều ngày.
 - **Người chốt:** Huy Copper, theo đề xuất của Hung.
 
+### D11. Dừng thu thập, chuyển sang khám phá dữ liệu (26/10/2026)
+- **Quyết định:** dừng ở 100 trang seed (93.704 câu hỏi, 23.470 cặp trùng) và tắt lịch 22:00 (Disabled, chưa xóa). Xuất dữ liệu ra `data/flat/*.parquet` và một file Excel thống kê kèm mẫu, để Huy Copper và Nguyễn Huy xem rồi thống nhất các bước làm sạch.
+- **Lý do:** dữ liệu đã đủ cho đề tài, với khoảng 20 nghìn câu trùng làm query. Các bước làm sạch cần được chọn dựa trên insight từ dữ liệu thật ([05](05_cleaning_pipeline.md)).
+- **Người chốt:** Huy Copper.
+
 ## Câu hỏi mở
 
 | # | Câu hỏi | Ai chốt | Trạng thái |
