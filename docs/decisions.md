@@ -55,6 +55,11 @@ Mỗi quyết định ghi: **ngày, quyết định, lý do, người chốt**. 
 - **Lý do:** dữ liệu đã đủ cho đề tài, với khoảng 20 nghìn câu trùng làm query. Các bước làm sạch cần được chọn dựa trên insight từ dữ liệu thật ([05](05_cleaning_pipeline.md)).
 - **Người chốt:** Huy Copper.
 
+### D12. Nguyễn Huy phụ trách khám phá dữ liệu và làm sạch (26/10/2026)
+- **Quyết định:** từ 26/10, Nguyễn Huy làm tiếp phần xem dữ liệu, tìm insight, chốt và cài đặt các bước làm sạch ([05](05_cleaning_pipeline.md)). Đầu vào là `data/flat/*.parquet` và `data/exports/explore_20261026.xlsx` từ D11.
+- **Lý do:** Huy Copper đã làm xong phần thu thập và xuất dữ liệu. Nguyễn Huy nhận làm tiếp phần làm sạch.
+- **Người chốt:** Nguyễn Huy và Huy Copper.
+
 ## Câu hỏi mở
 
 | # | Câu hỏi | Ai chốt | Trạng thái |

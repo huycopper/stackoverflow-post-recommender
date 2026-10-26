@@ -37,7 +37,7 @@ Cập nhật lần cuối: **23/10/2026**. Ngày báo cáo tiến độ và báo
   - Đã dừng thu thập và tắt lịch 22:00 ngày 26/10 (D11). Muốn lấy thêm thì tăng `seed_pages_per_tag` hoặc thêm tag, rồi bật lại lịch.
 - [x] Xuất dữ liệu để khám phá: `data/flat/*.parquet` và `data/exports/explore_20261026.xlsx` (26/10). (Huy Copper)
 - [ ] Gửi file Excel và `data/flat/` cho Nguyễn Huy. (Huy Copper)
-- [ ] Huy Copper và Nguyễn Huy xem dữ liệu, tìm insight, chốt các bước làm sạch. (ETL)
+- [ ] Xem dữ liệu, tìm insight, chốt các bước làm sạch. (Nguyễn Huy, nhận việc từ 26/10, D12)
 
 ## Giai đoạn 2: Làm sạch, tích hợp, EDA
 
