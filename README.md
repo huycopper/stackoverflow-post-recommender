@@ -102,7 +102,7 @@ uv run python -m so_recommender.explore flatten   # data/raw -> data/flat/*.parq
 uv run python -m so_recommender.explore excel     # data/flat -> data/exports/explore_<ngày>.xlsx
 ```
 
-- **`data/flat/`** có 4 bảng Parquet: `questions`, `answers`, `comments`, `duplicate_pairs`. Mỗi bản ghi chỉ giữ một lần, theo lần xuất hiện đầu tiên trong raw.
+- **`data/flat/`** có 5 bảng Parquet: `questions`, `answers`, `comments`, `duplicate_pairs` và `tag_synonyms` (bảng tag đồng nghĩa `from_tag → to_tag` của Stack Overflow). Mỗi bản ghi chỉ giữ một lần, là bản mới nhất trong raw (theo `fetched_at`).
   - Đọc bằng pandas: `pd.read_parquet("data/flat/comments.parquet")`.
   - Nạp được vào Postgres, DuckDB hoặc Spark.
   - Đây là bản phẳng để khám phá, **không phải** data contract. Định dạng có thể đổi.

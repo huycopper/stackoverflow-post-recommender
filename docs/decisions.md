@@ -60,6 +60,11 @@ Mỗi quyết định ghi: **ngày, quyết định, lý do, người chốt**. 
 - **Lý do:** Huy Copper đã làm xong phần thu thập và xuất dữ liệu. Nguyễn Huy nhận làm tiếp phần làm sạch.
 - **Người chốt:** Nguyễn Huy và Huy Copper.
 
+### D13. Lấy thêm bảng tag đồng nghĩa (29/10/2026)
+- **Quyết định:** thêm bước `tag_synonyms` vào bộ thu thập, lấy **toàn bộ** bảng tag đồng nghĩa của Stack Overflow (5.332 cặp `from_tag → to_tag`, 54 request). Xuất thành `data/flat/tag_synonyms.parquet` và sheet "Tag đồng nghĩa" trong file Excel explore.
+- **Lý do:** Nguyễn Huy đề xuất dùng bảng này để quy tag về tag chính. Lấy bảng rất rẻ, và hóa ra cần thật: dữ liệu vẫn còn 157 tag đồng nghĩa trên 2.290 câu hỏi (2,4%), ví dụ `selenium` (1.233 câu), dù trước đó tưởng Stack Overflow đã đổi hết ([03](03_data_source.md#các-endpoint-đang-dùng)). Hai cấu hình `C` và `C+Cm` chỉ dùng văn bản nên không bị ảnh hưởng. Lấy toàn bộ bảng thay vì chỉ lấy theo tag trong dữ liệu, vì tốn số request tương đương mà bảng lại đầy đủ.
+- **Người chốt:** Huy Copper.
+
 ## Câu hỏi mở
 
 | # | Câu hỏi | Ai chốt | Trạng thái |

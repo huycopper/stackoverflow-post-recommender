@@ -34,8 +34,18 @@ Code nằm ở `src/so_recommender/collect/`. Mỗi endpoint ghi raw vào một 
 | `answers` | `GET /questions/{ids}/answers` | `answers/` |
 | `question_comments` | `GET /questions/{ids}/comments` | `question_comments/` |
 | `answer_comments` | `GET /answers/{ids}/comments` | `answer_comments/` |
+| `tag_synonyms` | `GET /tags/synonyms?sort=creation&order=asc` (filter mặc định) | `tag_synonyms/` |
 
 `{ids}` là tối đa 100 ID nối bằng `;`, mỗi lần lấy tối đa 100 bản ghi một trang.
+
+**Tag đồng nghĩa** (thêm ngày 29/10/2026, D13): đây là bảng ánh xạ `from_tag → to_tag` của **toàn bộ** Stack Overflow, gồm 5.332 cặp, lấy hết trong 54 request. Ví dụ: `py → python`, `python3 → python-3.x`, `js → javascript`. Mỗi cặp có thêm `applied_count`, `creation_date` và `last_applied_date`.
+
+- Stack Overflow tự đổi tag đồng nghĩa sang tag chính khi đăng bài, nhưng **không phải lúc nào tag cũ cũng được đổi**. Trên dữ liệu đầy đủ ngày 29/10/2026:
+  - Có 8.651 tag khác nhau, trong đó **157 tag vẫn là tag đồng nghĩa**.
+  - Các tag này xuất hiện trên **2.290 câu hỏi (2,4%)**, trong đó 381 câu là câu trùng.
+  - Lớn nhất là `selenium → selenium-webdriver` (1.233 câu), `pandas-groupby → group-by` (264 câu), `dockerfile → docker` (99 câu).
+- Bảng này dùng để quy mọi cách viết của một tag về tag chính: ở bước làm sạch ([05](05_cleaning_pipeline.md), bước 6), hoặc khi dùng tag làm đặc trưng.
+- Bảng **không** gộp các tag chính gần nghĩa với nhau, như `python` và `python-3.x`.
 
 **Filter tùy chỉnh** = `withbody` + `question.closed_details`, `question.closed_date`, `question.closed_reason`, `question.comment_count`, `question.answer_count`, `question.link`, `answer.comment_count`, `comment.post_type`. Mã filter được tạo một lần rồi lưu trong state.
 

@@ -14,7 +14,7 @@ Quy tắc thay đổi:
 ## 1. Dữ liệu thô: `data/raw/`
 
 - Response nguyên văn từ API, mỗi dòng một response: `data/raw/{endpoint}/{YYYYMMDD}.jsonl.gz` (ngày theo UTC).
-- `endpoint` ∈ `filters`, `questions`, `questions_linked`, `questions_by_id`, `answers`, `question_comments`, `answer_comments`. Ý nghĩa từng loại xem [03](03_data_source.md#các-endpoint-đang-dùng).
+- `endpoint` ∈ `filters`, `questions`, `questions_linked`, `questions_by_id`, `answers`, `question_comments`, `answer_comments`, `tag_synonyms`. Ý nghĩa từng loại xem [03](03_data_source.md#các-endpoint-đang-dùng).
 - Mỗi dòng có dạng `{"fetched_at": "<ISO UTC>", "endpoint": "...", "url": "<không có key>", "params": {...}, "response": {...}}`.
 - Cùng một bản ghi có thể xuất hiện nhiều lần (nhiều tag, chạy lại sau khi bị ngắt). Bước làm sạch khử trùng theo ID ([05](05_cleaning_pipeline.md), bước 3).
 - Đọc bằng `so_recommender.collect.raw_store.iter_raw(root, endpoint)`.
