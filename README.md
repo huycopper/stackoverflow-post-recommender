@@ -8,7 +8,7 @@ Hệ thống gợi ý **top-K câu hỏi Stack Overflow liên quan nhất** cho 
 
 Nhãn đúng lấy từ quan hệ **câu hỏi trùng (duplicate)** trên Stack Overflow. Đánh giá bằng Precision@K, Recall@K, NDCG@K.
 
-**Trạng thái (24/10/2026):** giai đoạn thu thập dữ liệu. Đã có bộ thu thập qua API. Xem [docs/09_roadmap.md](docs/09_roadmap.md).
+**Trạng thái (29/10/2026):** đã thu thập xong dữ liệu (151.919 câu hỏi, 34.653 cặp trùng, tag `python`). Đang khám phá dữ liệu và chốt các bước làm sạch. Xem [docs/09_roadmap.md](docs/09_roadmap.md).
 
 ## Đọc gì trước
 
@@ -82,7 +82,7 @@ uv run python -m so_recommender.collect summary --out reports/collect_summary.js
 
 ### Chạy tự động mỗi ngày (Windows)
 
-Trên máy Huy Copper có một lịch Task Scheduler tên **"SO Recommender - daily collect"**. Lịch này chạy [scripts/collect_daily.ps1](scripts/collect_daily.ps1) lúc **22:00 mỗi ngày**, và chạy bù nếu lúc đó máy đang tắt. **Từ 26/10/2026 lịch đang tắt (Disabled)** vì đã thu thập đủ (D11). Muốn bật lại: `Enable-ScheduledTask -TaskName "SO Recommender - daily collect"`. Log ghi ở `data/logs/collect_YYYYMMDD_HHMM.log`. Mã thoát của script: 0 là đã lấy xong hết, 2 là tạm dừng vì quota (hôm sau chạy tiếp), 3 là đang có lần chạy khác.
+Trên máy Huy Copper có một lịch Task Scheduler tên **"SO Recommender - daily collect"**. Lịch này chạy [scripts/collect_daily.ps1](scripts/collect_daily.ps1) lúc **22:00 mỗi ngày**, và chạy bù nếu lúc đó máy đang tắt. **Từ 29/10/2026 lịch đang tắt (Disabled)** vì đã thu thập xong 200 trang seed (D14). Muốn bật lại: `Enable-ScheduledTask -TaskName "SO Recommender - daily collect"`. Log ghi ở `data/logs/collect_YYYYMMDD_HHMM.log`. Mã thoát của script: 0 là đã lấy xong hết, 2 là tạm dừng vì quota (hôm sau chạy tiếp), 3 là đang có lần chạy khác.
 
 ```powershell
 Get-ScheduledTask -TaskName "SO Recommender - daily collect" | Get-ScheduledTaskInfo   # lần chạy gần nhất / tiếp theo

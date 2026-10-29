@@ -35,7 +35,13 @@ Cập nhật lần cuối: **29/10/2026**. Ngày báo cáo tiến độ và báo
   - Comment: 392.490 comment của câu trả lời (đủ). 254.893 trên 258.630 comment của câu hỏi, vì có 935 câu API không trả comment. 14.986 comment làm lộ đáp án, cần lọc.
   - 76% câu hỏi có comment. Trong các câu trùng, 15.402 trên 20.103 câu (77%) có comment.
   - Đã dừng thu thập và tắt lịch 22:00 ngày 26/10 (D11). Muốn lấy thêm thì tăng `seed_pages_per_tag` hoặc thêm tag, rồi bật lại lịch.
-- [ ] Thu thập thêm tới 200 trang seed (D14), bắt đầu 29/10 lúc 14:46. Đã bật lại lịch 22:00 hằng ngày để chạy tiếp khi hết quota. Xong thì tắt lịch, cập nhật số liệu ở đây, rồi nén lại `data/raw/` gửi Nguyễn Huy (D15). (Huy Copper)
+- [x] Thu thập thêm tới 200 trang seed (D14): chạy từ 14:46 tới 16:42 ngày 29/10, xong trong một lần chạy (6.524 request, còn dư 3.420 quota). Dữ liệu 532 MB trong `data/raw/`, tóm tắt ở `data/exports/full_summary_20261029.json`. Đã tắt lại lịch 22:00. (Huy Copper)
+  - **151.919 câu hỏi** (thêm 58.215): 20.000 seed, 100 background, còn lại là câu liên kết và câu gốc. 29.941 câu bị đóng vì trùng, ra **34.653 cặp trùng** (thêm 11.183). Thiếu 4 câu gốc vì đã bị xóa.
+  - 384.330 câu trả lời: thiếu 2 câu so với `answer_count`, ở 3 câu hỏi.
+  - Comment: 571.918 comment của câu trả lời (đủ). 405.115 trên 409.497 comment của câu hỏi, vì có 1.118 câu API không trả comment. 22.593 comment làm lộ đáp án, cần lọc.
+  - 74,5% câu hỏi có comment. Trong các câu trùng, 22.852 trên 29.941 câu (76%) có comment.
+  - 57 batch `linked` chạm giới hạn 3 trang.
+- [ ] Gửi bản raw mới `data/exports/so_raw_jsonl_20261029_v2.zip` (557 MB, 200 trang seed, đã kiểm tra không chứa API key) cho Nguyễn Huy qua Drive (D15). Bản này chứa cả dữ liệu của bản gửi lúc 14:30. (Huy Copper)
 - [x] Xuất dữ liệu để khám phá: `data/flat/*.parquet` và `data/exports/explore_20261026.xlsx` (26/10). (Huy Copper)
 - [x] Gửi dữ liệu cho Nguyễn Huy qua Drive. (Huy Copper)
   - 26/10: `data/flat/` (4 bảng Parquet) và file Excel.
