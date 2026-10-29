@@ -109,4 +109,4 @@ uv run python -m so_recommender.explore excel     # data/flat -> data/exports/ex
 - **File Excel** có:
   - Thống kê trên **toàn bộ** dữ liệu: số comment và số câu trả lời trên mỗi câu hỏi, độ dài, dấu hiệu chất lượng, comment lộ đáp án, năm đăng, tag, kích thước nhóm trùng.
   - Các mẫu ngẫu nhiên để đọc: cặp trùng đặt cạnh câu gốc, comment lộ đáp án, comment bình thường, câu hỏi. Mẫu dùng seed cố định (`--seed 42`) nên xuất lại vẫn ra đúng mẫu đó.
-- `data/` không có trong git. Muốn chia sẻ cho người khác thì nén `data/flat/` hoặc gửi file Excel qua Drive.
+- `data/` không có trong git. Dữ liệu gửi cho bên làm sạch là file zip của `data/raw/`, gửi qua Drive (D15). File Excel gửi kèm để xem nhanh.

@@ -70,12 +70,20 @@ Mỗi quyết định ghi: **ngày, quyết định, lý do, người chốt**. 
 - **Lý do:** dự phòng trường hợp bước làm sạch loại bỏ nhiều dòng. Nguyễn Huy đề xuất "crawl hết các row" của các bảng. Lấy toàn bộ tag `python` (khoảng 2,2 triệu câu) thì cần khoảng 2 tháng quota, nên chọn mức gấp đôi, mất khoảng 1,5 ngày quota (100 trang trước tốn 13.157 request cho 93.704 câu). Seed sau trang 100 ít "kinh điển" hơn, nên số câu trùng tăng chậm hơn số câu hỏi.
 - **Người chốt:** Huy Copper.
 
+### D15. Giao dữ liệu raw `.jsonl.gz` cho bên làm sạch, bỏ bản Parquet phẳng khỏi đường chính (29/10/2026)
+- **Quyết định:** dữ liệu gửi cho Nguyễn Huy là **response nguyên văn của API**: nén `data/raw/` (các file `.jsonl.gz`, có cả `tag_synonyms`) thành một file zip rồi gửi qua Drive. Bước `explore flatten` (`data/flat/*.parquet`) chỉ để xem nhanh, không còn là đầu vào của bước làm sạch. Mục này thay thế phần "đầu vào" của D12.
+  - Bước làm sạch đọc thẳng từ raw và **giữ đủ mọi trường**, vì EDA cần. Làm sạch xong mới trích các trường bên model cần (`documents.json`, D9). Nếu dữ liệu quá nhiều cho việc train thì lấy một phần nhỏ.
+  - Nguyễn Huy viết code làm sạch rồi đẩy lên repo, Huy Copper pull về chạy được trên máy có dữ liệu mới nhất.
+  - Lần gửi đầu: 29/10 lúc 14:30, file `data/exports/so_raw_jsonl_20261029.zip` (394 MB, gồm `raw/`, `README_DATA.md`, `manifest.json`), là dữ liệu 100 trang seed của D11 cộng bảng tag đồng nghĩa của D13. Khi D14 chạy xong thì nén và gửi lại theo cùng cách.
+- **Lý do:** Nguyễn Huy muốn lấy đủ mọi trường để làm EDA, rồi mới tách theo schema Hung cần ("làm sạch các thứ xong mới extract mấy cái của hùng"). Bản phẳng đã tự khử trùng theo ID, trong khi đây lại là một bước làm sạch cần ghi số liệu ([05](05_cleaning_pipeline.md), bước 3).
+- **Người chốt:** Nguyễn Huy và Huy Copper (Messenger, 29/10/2026).
+
 ## Câu hỏi mở
 
 | # | Câu hỏi | Ai chốt | Trạng thái |
 |---|---|---|---|
 | Q1 | Báo TA việc đổi nguồn sang Stack Overflow, Stack Overflow có tính là "social media" không | ? | Chưa hỏi lại |
-| Q2 | Lưu trữ: Python + Parquet/SQL, hay lakehouse/Spark | Nguyễn Huy | Đang cân nhắc. Đề xuất Python ([06](06_architecture.md#lưu-trữ)) |
+| Q2 | Lưu trữ: Python + Parquet/SQL, hay lakehouse/Spark | Nguyễn Huy | Đang cân nhắc. Đề xuất ban đầu là Python ([06](06_architecture.md#lưu-trữ)). Ngày 29/10 Nguyễn Huy nghiêng về Spark: lấy hết dữ liệu rồi dùng Spark làm sạch, đến lúc train mà nhiều quá thì cắt bớt |
 | Q3 | Phạm vi tag: `python`, hay thêm `pandas`, hay tag khác | ETL | Chỉ `python`. 10 trang seed (24/10), rồi tăng lên 100 trang (25/10, D10), rồi 200 trang (29/10, D14). Muốn thêm tag thì thêm vào `config/collect.toml`, lịch hằng ngày sẽ lấy tiếp |
 | Q4 | Data contract lên 1.0 | ETL + Hung | Hung đã gửi định dạng (D9). Còn chờ Hung trả lời các trường bổ sung và cách lưu nhãn ([04](04_data_contract.md#câu-hỏi-mở-cần-chốt-với-bên-model)) |
 | Q5 | Ai làm phần "Training + viết báo cáo" | Nam, Hoàng | Chưa chọn |

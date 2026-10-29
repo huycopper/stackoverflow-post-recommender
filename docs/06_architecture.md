@@ -7,8 +7,9 @@ Stack Exchange API
       │  collect (quota, backoff, resume)
       ▼
 data/raw/            JSONL.gz, response nguyên văn, chỉ ghi thêm
-      │  ├─ explore flatten ─► data/flat/*.parquet (chưa sạch, để khám phá) ─► explore excel
-      │  clean + integrate (6 bước, xem 05)
+      │  ├─ explore flatten ─► data/flat/*.parquet (chưa sạch, chỉ để xem nhanh) ─► explore excel
+      │  ├─ zip raw/ ─► gửi bên làm sạch qua Drive (D15)
+      │  clean + integrate (6 bước, xem 05), đọc thẳng từ raw
       ▼
 data/clean/          Parquet theo data contract (04)
       │  build documents + splits
@@ -45,6 +46,7 @@ documents.json + qrels.json ──► models (baseline, model chính) ──► 
 
 - Dữ liệu dự kiến vài chục đến vài trăm nghìn dòng. Pandas hoặc Polars xử lý được, **chưa cần Spark**.
 - Nếu muốn có phần "big data" (bài L8) cho báo cáo, có thể thêm một thí nghiệm phụ so sánh pipeline Python với Spark trên cùng dữ liệu. Không đặt Spark trên đường chính.
+- 29/10/2026: Nguyễn Huy, người chốt Q2, nghiêng về **dùng Spark cho bước làm sạch** trên toàn bộ dữ liệu, rồi cắt bớt khi train. Chưa chốt hẳn. Nếu chọn Spark thì sửa sơ đồ trên và mục "Thư viện sử dụng".
 
 ## Thư viện sử dụng
 

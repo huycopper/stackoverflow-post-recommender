@@ -2,7 +2,9 @@
 
 Bước này chiếm khoảng **20% điểm**. Nếu dữ liệu sạch sẵn mà không có bước làm sạch, nhóm bị trừ ([02](02_course_requirements.md)). Vì vậy mỗi bước đều phải **có lý do, có số liệu và có ví dụ trước/sau** để đưa vào báo cáo.
 
-Input: `data/raw/`. Output: các bảng trong [04_data_contract.md](04_data_contract.md).
+Input: `data/raw/`, tức response nguyên văn dạng `.jsonl.gz`. Bản gửi qua Drive là file zip của thư mục này. **Không** dùng `data/flat/` làm đầu vào, vì bản đó chỉ để xem nhanh và đã tự khử trùng ([decisions](decisions.md), D15). Output: các bảng trong [04_data_contract.md](04_data_contract.md).
+
+Giữ đủ mọi trường qua các bước làm sạch, vì EDA cần. Chỉ ở bước cuối mới trích các trường bên model cần (`documents.json`).
 
 ## Ví dụ dữ liệu thô từ API
 
