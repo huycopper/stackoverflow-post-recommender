@@ -16,7 +16,9 @@ tags = ["python"]
 # 1. Seed: top-voted questions per tag. Many are canonical originals with many duplicates.
 # 10 pages (1,000 seeds) took ~2,200 requests and gave ~10k questions (24/10/2026). Raised to 100
 # on 25/10 to collect as much as possible; the daily scheduled run continues until done.
-seed_pages_per_tag = 100
+# 100 pages gave 93,704 questions for 13,157 requests (26/10). Raised to 200 on 29/10 for a
+# margin in case cleaning drops many rows (~1.5 days of quota).
+seed_pages_per_tag = 200
 seed_sort = "votes"
 # 2. Linked: questions that link to the seeds; the ones closed as duplicates give labelled pairs.
 # Seeds have hundreds of linked questions each: 100 seeds per request timed out, so keep it small.

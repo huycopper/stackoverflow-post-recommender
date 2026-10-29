@@ -65,13 +65,18 @@ Mỗi quyết định ghi: **ngày, quyết định, lý do, người chốt**. 
 - **Lý do:** Nguyễn Huy đề xuất dùng bảng này để quy tag về tag chính. Lấy bảng rất rẻ, và hóa ra cần thật: dữ liệu vẫn còn 157 tag đồng nghĩa trên 2.290 câu hỏi (2,4%), ví dụ `selenium` (1.233 câu), dù trước đó tưởng Stack Overflow đã đổi hết ([03](03_data_source.md#các-endpoint-đang-dùng)). Hai cấu hình `C` và `C+Cm` chỉ dùng văn bản nên không bị ảnh hưởng. Lấy toàn bộ bảng thay vì chỉ lấy theo tag trong dữ liệu, vì tốn số request tương đương mà bảng lại đầy đủ.
 - **Người chốt:** Huy Copper.
 
+### D14. Thu thập thêm: 200 trang seed (29/10/2026)
+- **Quyết định:** tăng `seed_pages_per_tag` từ 100 lên 200 (thêm 10.000 câu hỏi kinh điển cùng các câu liên kết tới chúng) và chạy tiếp bộ thu thập. Thay thế phần "dừng thu thập" của D11.
+- **Lý do:** dự phòng trường hợp bước làm sạch loại bỏ nhiều dòng. Nguyễn Huy đề xuất "crawl hết các row" của các bảng. Lấy toàn bộ tag `python` (khoảng 2,2 triệu câu) thì cần khoảng 2 tháng quota, nên chọn mức gấp đôi, mất khoảng 1,5 ngày quota (100 trang trước tốn 13.157 request cho 93.704 câu). Seed sau trang 100 ít "kinh điển" hơn, nên số câu trùng tăng chậm hơn số câu hỏi.
+- **Người chốt:** Huy Copper.
+
 ## Câu hỏi mở
 
 | # | Câu hỏi | Ai chốt | Trạng thái |
 |---|---|---|---|
 | Q1 | Báo TA việc đổi nguồn sang Stack Overflow, Stack Overflow có tính là "social media" không | ? | Chưa hỏi lại |
 | Q2 | Lưu trữ: Python + Parquet/SQL, hay lakehouse/Spark | Nguyễn Huy | Đang cân nhắc. Đề xuất Python ([06](06_architecture.md#lưu-trữ)) |
-| Q3 | Phạm vi tag: `python`, hay thêm `pandas`, hay tag khác | ETL | Chỉ `python`. 10 trang seed (24/10), rồi tăng lên 100 trang (25/10, D10). Muốn thêm tag thì thêm vào `config/collect.toml`, lịch hằng ngày sẽ lấy tiếp |
+| Q3 | Phạm vi tag: `python`, hay thêm `pandas`, hay tag khác | ETL | Chỉ `python`. 10 trang seed (24/10), rồi tăng lên 100 trang (25/10, D10), rồi 200 trang (29/10, D14). Muốn thêm tag thì thêm vào `config/collect.toml`, lịch hằng ngày sẽ lấy tiếp |
 | Q4 | Data contract lên 1.0 | ETL + Hung | Hung đã gửi định dạng (D9). Còn chờ Hung trả lời các trường bổ sung và cách lưu nhãn ([04](04_data_contract.md#câu-hỏi-mở-cần-chốt-với-bên-model)) |
 | Q5 | Ai làm phần "Training + viết báo cáo" | Nam, Hoàng | Chưa chọn |
 | Q6 | Có fine-tune model không | Hung | Chưa chốt ([07](07_modeling_eval.md)) |
