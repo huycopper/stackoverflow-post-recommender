@@ -1,4 +1,5 @@
-"""Collection steps: seed -> background -> linked -> originals -> answers -> comments.
+"""Collection steps: seed -> background -> linked -> originals -> answers -> comments,
+plus the site's tag synonym table.
 
 Every step is resumable. After each page or batch the state is saved, so a run stopped by the
 quota, the request budget or Ctrl+C continues from the same place next time. Strategy and
@@ -29,6 +30,7 @@ STEPS = (
     "answers",
     "question_comments",
     "answer_comments",
+    "tag_synonyms",
 )
 
 BATCH_SIZE = 100  # the API accepts at most 100 ids per vectorized request
@@ -209,6 +211,21 @@ class Collector:
             self.state.answer_comments_done,
         )
 
+    def step_tag_synonyms(self) -> None:
+        # The whole synonym table of the site (~5,300 rows, ~54 requests on 29/10/2026), so any
+        # spelling of a tag can be mapped to its main tag. Most question tags are main tags
+        # already, but not all: 2.4% of our questions still carry a synonym (e.g. "selenium").
+        # Oldest first keeps pages stable while new synonyms are added; the default API filter
+        # already has every synonym field.
+        self._listing(
+            "tag_synonyms",
+            {"sort": "creation", "order": "asc"},
+            self.sample.tag_synonym_pages,
+            endpoint="tag_synonyms",
+            path="/tags/synonyms",
+            use_filter=False,
+        )
+
     # Helpers -----------------------------------------------------------------------------
 
     def _children(
@@ -232,17 +249,31 @@ class Collector:
             done.update(batch)
             self._save()
 
-    def _listing(self, key: str, params: dict[str, Any], max_pages: int, role: set[int]) -> None:
+    def _listing(
+        self,
+        key: str,
+        params: dict[str, Any],
+        max_pages: int,
+        role: set[int] | None = None,
+        *,
+        endpoint: str = "questions",
+        path: str = "/questions",
+        use_filter: bool = True,
+    ) -> None:
+        """Page through a listing, resuming after the last page done for `key`.
+
+        With `role`, items are questions: they are ingested and their ids added to `role`.
+        """
         start = self.state.pages_done.get(key, 0) + 1
         for page in range(start, max_pages + 1):
             if key in self.state.pages_exhausted:
                 return
-            data = self._fetch(
-                "questions",
-                "/questions",
-                {**params, "page": page, "pagesize": self.pagesize, "filter": self._filter()},
-            )
-            role.update(self._ingest_questions(data["items"]))
+            query = {**params, "page": page, "pagesize": self.pagesize}
+            if use_filter:
+                query["filter"] = self._filter()
+            data = self._fetch(endpoint, path, query)
+            if role is not None:
+                role.update(self._ingest_questions(data["items"]))
             self.state.pages_done[key] = page
             if not data.get("has_more"):
                 self.state.pages_exhausted.add(key)

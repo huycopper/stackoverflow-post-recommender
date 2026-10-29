@@ -172,6 +172,7 @@ def build_workbook(
     _leaks_sheet(wb.create_sheet("Comment lộ đáp án (mẫu)"), q, c, rng, n_leaks)
     _comments_sheet(wb.create_sheet("Comment ngẫu nhiên (mẫu)"), c, rng, n_comments)
     _questions_sheet(wb.create_sheet("Câu hỏi (mẫu)"), q, rng, n_questions)
+    _synonyms_sheet(wb.create_sheet("Tag đồng nghĩa"), tables["tag_synonyms"], q)
     wb.calculation.fullCalcOnLoad = True  # formulas have no cached values until Excel computes
     out = Path(out)
     out.parent.mkdir(parents=True, exist_ok=True)
@@ -229,6 +230,11 @@ def _summary_sheet(ws, stats: dict[str, Any], source_note: str, seed: int) -> No
         ("Comment lộ đáp án (mẫu)", "Các comment phải lọc ở bước làm sạch, để chọn quy tắc lọc"),
         ("Comment ngẫu nhiên (mẫu)", "Comment bình thường: bao nhiêu là nhiễu ('thanks', '+1')?"),
         ("Câu hỏi (mẫu)", "Câu hỏi ngẫu nhiên với các trường chính"),
+        (
+            "Tag đồng nghĩa",
+            "Toàn bộ bảng tag đồng nghĩa của Stack Overflow (from_tag → to_tag), không phải "
+            "mẫu; cột cuối cho biết to_tag có xuất hiện trong dữ liệu không",
+        ),
     ]
     for name, text in guide:
         row += 1
@@ -322,6 +328,26 @@ def _stats_sheet(ws, stats: dict[str, Any]) -> None:
         share_of=[],
         note="Mỗi câu hỏi có nhiều tag, nên tổng lớn hơn số câu hỏi.",
     )
+    row = _count_table(
+        ws,
+        row,
+        "Tag đồng nghĩa",
+        ["Chỉ số", "Số"],
+        [[k, v] for k, v in stats["tag_synonyms"].items()],
+        share_of=[],
+        note="Phần lớn tag trong dữ liệu đã là tag chính, nhưng vẫn còn một số tag đồng nghĩa "
+        "chưa được đổi (bảng bên dưới); bước làm sạch nên đổi chúng sang tag chính. Toàn bộ "
+        "bảng ở sheet Tag đồng nghĩa.",
+    )
+    if stats["synonym_tags_in_data"]:
+        row = _count_table(
+            ws,
+            row,
+            "Tag trong dữ liệu vẫn là tag đồng nghĩa (tối đa 30)",
+            ["from_tag", "to_tag", "Số câu hỏi"],
+            stats["synonym_tags_in_data"][:30],
+            share_of=[],
+        )
     row = _count_table(
         ws,
         row,
@@ -519,4 +545,39 @@ def _questions_sheet(ws, q, rng, n: int) -> None:
         rows,
         text_cols={3, 4, 8, 10, 11},
         link_cols={2},
+    )
+
+
+def _synonyms_sheet(ws, syn: pa.Table, q: pa.Table) -> None:
+    """The whole synonym table (a few thousand rows), most used first."""
+    data_tags = set(pc.list_flatten(q["tags"]).to_pylist())
+    rows = sorted(syn.to_pylist(), key=lambda s: (-(s["applied_count"] or 0), s["from_tag"]))
+
+    def naive(ts):  # Excel has no time zones; the values are UTC
+        return ts.replace(tzinfo=None) if ts is not None else None
+
+    _sheet_table(
+        ws,
+        [
+            "from_tag",
+            "to_tag",
+            "applied_count",
+            "creation_date (UTC)",
+            "last_applied_date (UTC)",
+            "to_tag có trong dữ liệu?",
+        ],
+        [32, 32, 14, 18, 20, 16],
+        [
+            [
+                s["from_tag"],
+                s["to_tag"],
+                s["applied_count"],
+                naive(s["creation_date"]),
+                naive(s["last_applied_date"]),
+                "có" if s["to_tag"] in data_tags else "không",
+            ]
+            for s in rows
+        ],
+        text_cols={1, 2, 6},
+        formats={3: "#,##0", 4: "yyyy-mm-dd", 5: "yyyy-mm-dd"},
     )

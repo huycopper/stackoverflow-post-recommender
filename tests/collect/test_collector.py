@@ -61,7 +61,26 @@ def build_api() -> FakeApi:
         lambda p, q: p == "/answers/100/comments",
         page([{"comment_id": 600, "post_id": 100, "body": "works"}]),
     )
+    api.route(
+        lambda p, q: p == "/tags/synonyms",
+        page(
+            [
+                synonym("py", "python", applied=10),
+                synonym("dict", "dictionary", applied=5),
+            ]
+        ),
+    )
     return api
+
+
+def synonym(from_tag: str, to_tag: str, applied: int = 1) -> dict:
+    return {
+        "from_tag": from_tag,
+        "to_tag": to_tag,
+        "applied_count": applied,
+        "creation_date": 1300000000,
+        "last_applied_date": 1700000000,
+    }
 
 
 def make_collector(
@@ -111,8 +130,12 @@ def test_full_run_collects_everything(tmp_path, clock):
     assert "seed:python" in state.pages_exhausted
     assert sum(1 for p, q in api.calls if p == "/questions" and q["sort"] == "votes") == 1
 
-    # every data request uses the custom filter, and the key never reaches the raw store
-    assert all(q.get("filter") == "F" for p, q in api.calls if p != "/filters/create")
+    # every post request uses the custom filter (the synonym table needs none), and the key
+    # never reaches the raw store
+    no_filter = {"/filters/create", "/tags/synonyms"}
+    assert all(q.get("filter") == "F" for p, q in api.calls if p not in no_filter)
+    assert all("filter" not in q for p, q in api.calls if p == "/tags/synonyms")
+    assert "tag_synonyms" in state.pages_exhausted
     records = list(iter_raw(tmp_path / "raw"))
     assert {r["endpoint"] for r in records} == {
         "filters",
@@ -122,6 +145,7 @@ def test_full_run_collects_everything(tmp_path, clock):
         "answers",
         "question_comments",
         "answer_comments",
+        "tag_synonyms",
     }
     assert all("SECRET" not in r["url"] and "key" not in r["params"] for r in records)
 
@@ -175,5 +199,36 @@ def test_summary_reports_counts(tmp_path, clock):
         "with_comments": 1,
     }
     assert result["comments"]["on_questions_expected"] == 3
+    assert result["tag_synonyms"] == {
+        "total": 2,
+        "question_tags_that_are_synonyms": [],
+        "question_tags_with_synonyms": 1,  # python, the main tag of "py"
+    }
     assert result["comments"]["leaky_duplicate_mentions"] == 1
     assert "closed_details" in result["fields"]["question"]
+
+
+def test_tag_synonyms_page_through_and_resume(tmp_path, clock):
+    def synonyms_page(path, query):
+        n = int(query["page"])
+        return page([synonym(f"t{n}", "python")], has_more=n < 3)
+
+    api = FakeApi()
+    api.route(lambda p, q: p == "/tags/synonyms", synonyms_page)
+    first = make_collector(api, clock, tmp_path, max_requests=2)
+    assert first.run(["tag_synonyms"]) is False  # budget used up after 2 of 3 pages
+    assert first.state.pages_done["tag_synonyms"] == 2
+
+    resumed = make_collector(
+        api, clock, tmp_path, state=CollectorState.load(tmp_path / "state.json")
+    )
+    assert resumed.run(["tag_synonyms"]) is True
+    assert [q["page"] for _, q in api.calls] == ["1", "2", "3"]  # no page fetched twice
+    assert all(q["sort"] == "creation" and q["order"] == "asc" for _, q in api.calls)
+    assert "tag_synonyms" in resumed.state.pages_exhausted
+    stored = [
+        i["from_tag"]
+        for r in iter_raw(tmp_path / "raw", "tag_synonyms")
+        for i in r["response"]["items"]
+    ]
+    assert stored == ["t1", "t2", "t3"]

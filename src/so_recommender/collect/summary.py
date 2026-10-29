@@ -28,6 +28,7 @@ def summarize(raw_dir: str | Path) -> dict[str, Any]:
     answers: dict[int, dict] = {}
     question_comments: dict[int, dict] = {}
     answer_comments: dict[int, dict] = {}
+    synonyms: dict[str, str] = {}  # from_tag -> to_tag
     last_quota: int | None = None
     last_fetched_at = ""
 
@@ -50,7 +51,10 @@ def summarize(raw_dir: str | Path) -> dict[str, Any]:
             question_comments.update((int(i["comment_id"]), i) for i in items)
         elif endpoint == "answer_comments":
             answer_comments.update((int(i["comment_id"]), i) for i in items)
+        elif endpoint == "tag_synonyms":
+            synonyms.update((i["from_tag"], i["to_tag"]) for i in items)
 
+    question_tags = {t for q in questions.values() for t in q.get("tags", [])}
     duplicates = {qid for qid, q in questions.items() if q.get("closed_reason") == "Duplicate"}
     pairs = {
         (qid, int(o["question_id"]))
@@ -115,6 +119,12 @@ def summarize(raw_dir: str | Path) -> dict[str, Any]:
             "leaky_duplicate_mentions": sum(
                 bool(LEAKY_COMMENT_RE.search(c.get("body", ""))) for c in all_comments
             ),
+        },
+        "tag_synonyms": {
+            "total": len(synonyms),
+            # Tags on posts that are still synonyms; cleaning maps them to the main tag.
+            "question_tags_that_are_synonyms": sorted(question_tags & synonyms.keys()),
+            "question_tags_with_synonyms": len(question_tags & set(synonyms.values())),
         },
         "fields": {
             "question": _fields(questions.values()),

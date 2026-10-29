@@ -30,6 +30,9 @@ original_rounds = 3
 #    is only a safety net (hits are logged in state.truncated_ids).
 items_per_batch = 500
 max_pages_per_batch = 50
+# 6. Tag synonyms: the whole synonym table of the site (about 5,300 rows, 54 requests), to map
+#    any spelling of a tag to its main tag (to_tag). Resumes after the last page fetched.
+tag_synonym_pages = 100
 
 [paths]
 raw_dir = "data/sample/raw"

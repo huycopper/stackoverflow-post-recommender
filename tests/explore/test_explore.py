@@ -12,7 +12,7 @@ from so_recommender.explore.flatten import flatten
 from so_recommender.explore.stats import bin_counts, compute, duplicate_groups, load
 
 from ..collect.conftest import FakeClock
-from ..collect.test_collector import build_api, make_collector, question
+from ..collect.test_collector import build_api, make_collector, question, synonym
 
 
 @pytest.fixture
@@ -34,14 +34,26 @@ def flat(tmp_path):
         {},
         {"items": [question(77, tags=("python", "excel")) | {"title": "=1+1"}]},
     )
+    # a question still tagged with a synonym ("py" means "python"); the synonym fetched again
+    raw.write("questions", "u", {}, {"items": [question(78, tags=("py",))]})
+    raw.write("tag_synonyms", "u", {}, {"items": [synonym("py", "python", applied=11)]})
     counts = flatten(tmp_path / "raw", tmp_path / "flat", collector.state, chunk_rows=2)
     return tmp_path / "flat", counts
 
 
 def test_flatten_keeps_the_latest_copy_of_each_record(flat):
     flat_dir, counts = flat
-    assert counts == {"questions": 7, "answers": 1, "comments": 4, "duplicate_pairs": 5}
+    assert counts == {
+        "questions": 8,
+        "answers": 1,
+        "comments": 4,
+        "duplicate_pairs": 5,
+        "tag_synonyms": 2,
+    }
     t = load(flat_dir)
+    syn = {r["from_tag"]: r for r in t["tag_synonyms"].to_pylist()}
+    assert syn["py"]["to_tag"] == "python" and syn["py"]["applied_count"] == 11  # latest copy
+    assert pa.types.is_timestamp(t["tag_synonyms"].schema.field("creation_date").type)
     q = {r["question_id"]: r for r in t["questions"].to_pylist()}
     assert q[10]["source"] == "questions_linked" and q[10]["original_ids"] == [1, 50, 999]
     assert q[3]["closed_reason"] == "Duplicate" and q[3]["source"] == "questions_by_id"
@@ -71,11 +83,17 @@ def test_duplicate_groups_and_bins():
 
 def test_stats_on_flat_tables(flat):
     stats = compute(load(flat[0]))
-    assert stats["overview"]["Câu hỏi"] == 7
+    assert stats["overview"]["Câu hỏi"] == 8
+    syn = stats["tag_synonyms"]
+    assert syn["Cặp tag đồng nghĩa trên Stack Overflow (from_tag → to_tag)"] == 2
+    assert syn["Tag khác nhau trong dữ liệu"] == 3  # python, excel, py
+    assert syn["  là tag đồng nghĩa, chưa được đổi sang tag chính"] == 1
+    assert syn["  là tag chính có ít nhất 1 tag đồng nghĩa"] == 1
+    assert stats["synonym_tags_in_data"] == [["py", "python", 1]]
     assert stats["overview"]["Nhóm trùng (thành phần liên thông)"] == 1
     assert stats["roles"]["bị đóng vì trùng (query)"] == 3
     per_q = dict(stats["comments_per_question"]["all"])
-    assert per_q["0"] == 5 and per_q["1"] == 1 and per_q["2"] == 1
+    assert per_q["0"] == 6 and per_q["1"] == 1 and per_q["2"] == 1
     assert stats["leaks"]["any_comment"] == 1
     assert stats["leaks"]["duplicates_with_leaky_comment"] == 1
     assert stats["biggest_groups"][0][:3] == [6, 1, 3]  # question 1 is the hub of 2, 3 and 10
@@ -92,7 +110,11 @@ def test_workbook_sheets_formulas_and_text_safety(flat, tmp_path):
         "Comment lộ đáp án (mẫu)",
         "Comment ngẫu nhiên (mẫu)",
         "Câu hỏi (mẫu)",
+        "Tag đồng nghĩa",
     ]
+    syn = list(wb["Tag đồng nghĩa"].iter_rows(min_row=2, values_only=True))
+    assert syn[0][:3] == ("py", "python", 11) and syn[0][5] == "có"  # most applied first
+    assert syn[0][3].year == 2011 and syn[0][3].tzinfo is None
     formulas = [c.value for ws in wb for row in ws.iter_rows() for c in row if c.data_type == "f"]
     assert formulas and all(f.startswith("=IFERROR(") for f in formulas)
     titles = [c.value for c in wb["Câu hỏi (mẫu)"]["C"][1:]]

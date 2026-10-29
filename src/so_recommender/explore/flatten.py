@@ -67,6 +67,16 @@ COMMENTS = pa.schema(
     ]
 )
 PAIRS = pa.schema([("duplicate_id", pa.int64()), ("original_id", pa.int64())])
+# The site's tag synonym table: from_tag is another spelling of the main tag to_tag.
+TAG_SYNONYMS = pa.schema(
+    [
+        ("from_tag", pa.string()),
+        ("to_tag", pa.string()),
+        ("applied_count", pa.int64()),
+        ("creation_date", TS),
+        ("last_applied_date", TS),
+    ]
+)
 
 
 class _ChunkedWriter:
@@ -122,9 +132,9 @@ def _latest_items(raw_dir: Path, endpoints: list[str], key: str):
     for this site" and a day later closed as a duplicate. Two passes keep memory small: the
     first remembers where each id's latest copy is, the second yields just those copies.
     """
-    latest: dict[int, tuple[str, int]] = {}
+    latest: dict[Any, tuple[str, int]] = {}
     for seq, fetched_at, _, item in _items(raw_dir, endpoints):
-        item_id = int(item[key])
+        item_id = item[key]  # an int id, or a string such as a tag's from_tag
         if item_id not in latest or (fetched_at, seq) >= latest[item_id]:
             latest[item_id] = (fetched_at, seq)
     keep = {seq for _, seq in latest.values()}
@@ -140,7 +150,7 @@ def flatten(
     state: CollectorState | None = None,
     chunk_rows: int = 20_000,
 ) -> dict[str, int]:
-    """Write questions/answers/comments/duplicate_pairs.parquet; return the row counts."""
+    """Write questions/answers/comments/duplicate_pairs/tag_synonyms.parquet; return row counts."""
     raw_dir, out_dir = Path(raw_dir), Path(out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
     seeds = state.seed_ids if state else set()
@@ -229,9 +239,15 @@ def flatten(
         ),
         out_dir / "duplicate_pairs.parquet",
     )
+
+    synonyms = _ChunkedWriter(out_dir / "tag_synonyms.parquet", TAG_SYNONYMS, chunk_rows)
+    for _, s in _latest_items(raw_dir, ["tag_synonyms"], "from_tag"):
+        synonyms.add({name: s.get(name) for name in TAG_SYNONYMS.names})
+    synonyms.close()
     return {
         "questions": questions.count,
         "answers": answers.count,
         "comments": comments.count,
         "duplicate_pairs": len(ordered),
+        "tag_synonyms": synonyms.count,
     }

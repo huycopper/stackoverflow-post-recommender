@@ -34,6 +34,8 @@ class SampleSettings:
     # their pages are fetched; max_pages_per_batch is only a safety net.
     items_per_batch: int = 500
     max_pages_per_batch: int = 50
+    # Tag synonym table of the whole site (about 54 pages); a run resumes after the last page.
+    tag_synonym_pages: int = 100
 
 
 @dataclass(frozen=True)

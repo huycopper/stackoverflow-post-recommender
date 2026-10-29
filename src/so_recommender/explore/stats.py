@@ -14,6 +14,8 @@ import pyarrow as pa
 import pyarrow.compute as pc
 import pyarrow.parquet as pq
 
+from .flatten import TAG_SYNONYMS
+
 # Comments that reveal the duplicate link; cleaning step 2 has to deal with them (docs/05).
 LEAK_PATTERNS = {
     "possible duplicate": r"possible duplicate",
@@ -27,10 +29,16 @@ ANY_LEAK = "|".join(f"({p})" for p in LEAK_PATTERNS.values())
 
 def load(flat_dir: str | Path) -> dict[str, pa.Table]:
     flat_dir = Path(flat_dir)
-    return {
+    tables = {
         name: pq.read_table(flat_dir / f"{name}.parquet")
         for name in ("questions", "answers", "comments", "duplicate_pairs")
     }
+    # Optional: flat folders made before 29/10/2026 have no synonym table.
+    synonyms = flat_dir / "tag_synonyms.parquet"
+    tables["tag_synonyms"] = (
+        pq.read_table(synonyms) if synonyms.exists() else TAG_SYNONYMS.empty_table()
+    )
+    return tables
 
 
 def bin_counts(values: Iterable[int], edges: list[tuple[str, int, int | None]]) -> list[list]:
@@ -134,6 +142,10 @@ def compute(tables: dict[str, pa.Table]) -> dict[str, Any]:
         hub = max(members, key=lambda m: in_degree[m])
         return [len(members), hub, in_degree[hub], title_of.get(hub, "(chưa lấy về)")]
 
+    syn = tables.get("tag_synonyms", TAG_SYNONYMS.empty_table())
+    synonym_of = dict(zip(syn["from_tag"].to_pylist(), syn["to_tag"].to_pylist(), strict=True))
+    main_tags = set(synonym_of.values())
+
     roles = {
         "seed (vote cao nhất)": _count_true(q["is_seed"]),
         "background (câu thường)": _count_true(q["is_background"]),
@@ -190,6 +202,17 @@ def compute(tables: dict[str, pa.Table]) -> dict[str, Any]:
             "duplicates_with_comments": sum(comments_per_q.get(i, 0) > 0 for i in duplicates),
         },
         "top_tags": tags.most_common(30),
+        "tag_synonyms": {
+            "Cặp tag đồng nghĩa trên Stack Overflow (from_tag → to_tag)": len(synonym_of),
+            "Tag khác nhau trong dữ liệu": len(tags),
+            "  là tag đồng nghĩa, chưa được đổi sang tag chính": sum(t in synonym_of for t in tags),
+            "  là tag chính có ít nhất 1 tag đồng nghĩa": sum(t in main_tags for t in tags),
+        },
+        # [from_tag, to_tag, questions] for tags in the data that are still synonyms
+        "synonym_tags_in_data": sorted(
+            ([t, synonym_of[t], n] for t, n in tags.items() if t in synonym_of),
+            key=lambda r: -r[2],
+        ),
         "years": years,
         "group_sizes": bin_counts(group_sizes, GROUP_BINS),
         "biggest_groups": [describe_group(m) for m in biggest],
