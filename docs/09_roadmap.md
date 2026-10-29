@@ -35,7 +35,7 @@ Cập nhật lần cuối: **29/10/2026**. Ngày báo cáo tiến độ và báo
   - Comment: 392.490 comment của câu trả lời (đủ). 254.893 trên 258.630 comment của câu hỏi, vì có 935 câu API không trả comment. 14.986 comment làm lộ đáp án, cần lọc.
   - 76% câu hỏi có comment. Trong các câu trùng, 15.402 trên 20.103 câu (77%) có comment.
   - Đã dừng thu thập và tắt lịch 22:00 ngày 26/10 (D11). Muốn lấy thêm thì tăng `seed_pages_per_tag` hoặc thêm tag, rồi bật lại lịch.
-- [ ] Thu thập thêm tới 200 trang seed (D14), bắt đầu 29/10 lúc 14:46. Xong thì cập nhật số liệu ở đây, rồi nén lại `data/raw/` gửi Nguyễn Huy (D15). (Huy Copper)
+- [ ] Thu thập thêm tới 200 trang seed (D14), bắt đầu 29/10 lúc 14:46. Đã bật lại lịch 22:00 hằng ngày để chạy tiếp khi hết quota. Xong thì tắt lịch, cập nhật số liệu ở đây, rồi nén lại `data/raw/` gửi Nguyễn Huy (D15). (Huy Copper)
 - [x] Xuất dữ liệu để khám phá: `data/flat/*.parquet` và `data/exports/explore_20261026.xlsx` (26/10). (Huy Copper)
 - [x] Gửi dữ liệu cho Nguyễn Huy qua Drive. (Huy Copper)
   - 26/10: `data/flat/` (4 bảng Parquet) và file Excel.
