@@ -15,7 +15,7 @@ File này dành cho người chưa biết gì về dự án. Đọc xong bạn s
 
 Rất nhiều câu hỏi mới thực ra **đã có người hỏi rồi**. Khi đó người kiểm duyệt **đóng câu hỏi mới là "duplicate" (trùng)** và gắn link tới câu hỏi cũ, gọi là **câu gốc**.
 
-**Ví dụ thật:** câu hỏi số `79904105` bị đóng vì trùng với câu `38987` *"How do I merge two dictionaries in a single expression in Python?"* (gộp hai dictionary trong Python). Câu `38987` là một câu "kinh điển": có khoảng 450 câu hỏi khác liên kết tới nó.
+**Ví dụ thật:** câu hỏi số `1781571` *"How to concatenate two dictionaries to create a new one?"* bị đóng vì trùng với câu `38987` *"How do I merge two dictionaries in a single expression in Python?"* (gộp hai dictionary trong Python). Câu `38987` là một câu "kinh điển": có khoảng 450 câu hỏi khác liên kết tới nó.
 
 Như vậy, mỗi lần có câu hỏi bị đóng vì trùng là một lần người hỏi không tự tìm được câu trả lời đã có sẵn. Một hệ thống gợi ý tốt sẽ giúp họ tìm ra ngay.
 

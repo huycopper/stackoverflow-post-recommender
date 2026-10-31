@@ -31,6 +31,7 @@ Toàn bộ tài liệu:
 8. [08_team_workflow.md](docs/08_team_workflow.md): phân công, quy tắc nhánh, PR, commit
 9. [09_roadmap.md](docs/09_roadmap.md): kế hoạch, mốc, checklist
 10. [decisions.md](docs/decisions.md): nhật ký quyết định
+11. [10_raw_data_metadata.md](docs/10_raw_data_metadata.md): mô tả chi tiết từng thư mục và từng trường của dữ liệu thô `data/raw/`
 
 ## Thành viên
 

@@ -42,7 +42,7 @@ Code nằm ở `src/so_recommender/collect/`. Mỗi endpoint ghi raw vào một 
 Lấy quan hệ trùng (đã kiểm tra với API thật ngày 23/10/2026):
 
 - Câu hỏi bị đóng vì trùng có `closed_reason = "Duplicate"`.
-- `closed_details.original_questions` liệt kê các câu gốc. Ví dụ: câu 79904105 có câu gốc là 38987.
+- `closed_details.original_questions` liệt kê các câu gốc. Ví dụ: câu 1781571 có câu gốc là 38987.
 - `/questions/{id}/linked` của một câu hỏi phổ biến có khoảng 16–18% là câu đã đóng vì trùng. Câu 38987 có 453 câu liên kết tới.
 
 Comment và câu trả lời được lấy qua endpoint riêng, **không** nhúng vào filter của `/questions`. Lý do: cách này chắc chắn lấy đủ và có phân trang rõ ràng. Câu hỏi có `answer_count = 0` hoặc `comment_count = 0` được bỏ qua để tiết kiệm request.

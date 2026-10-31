@@ -132,7 +132,7 @@ Cấu hình thí nghiệm ([07](07_modeling_eval.md)): `C` dùng `title` + `body
 Mảng các query, tức các câu hỏi bị đóng vì trùng:
 
 ```json
-[{"query_id": 79904105, "relevant_ids": [38987], "split": "test"}]
+[{"query_id": 1781571, "relevant_ids": [38987], "split": "test"}]
 ```
 
 `relevant_ids` là các câu khác cùng nhóm trùng với query (`duplicate_groups`). Định dạng của Hung không có chỗ cho nhãn, nên cần một file riêng như thế này hoặc một cách khác mà Hung chọn.
