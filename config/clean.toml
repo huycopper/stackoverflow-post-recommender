@@ -1,0 +1,18 @@
+# Settings for `python -m so_recommender.clean`. Paths are relative to the repo root.
+# Cleaning rules (field types, thresholds, leak patterns, split) live in
+# src/so_recommender/clean/contracts/*.json; this file only says where and how to run.
+
+[paths]
+raw_dir = "data/raw"
+clean_dir = "data/clean"
+stats_file = "reports/cleaning_stats.json"
+# `export`: model input built from data/clean (data contract 0.3, section 3)
+documents_file = "data/clean/documents.json"
+qrels_file = "data/clean/qrels.json"
+export_stats_file = "reports/export_stats.json"
+
+[spark]
+# 16 parallel tasks in a 4 GB heap ran out of memory on the full data (31/10/2026).
+master = "local[6]"
+driver_memory = "4g"
+shuffle_partitions = 16

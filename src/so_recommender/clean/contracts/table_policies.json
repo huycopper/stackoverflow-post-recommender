@@ -1,0 +1,30 @@
+{
+  "leaky_comments": {
+    "match_on": "raw_html",
+    "patterns": {
+      "possible duplicate": {"regex": "(?i)possible duplicate", "enabled": true},
+      "does this answer your question": {"regex": "(?i)does this answer your question", "enabled": true},
+      "already has an answer": {"regex": "(?i)already ha(s|ve) an? answers?", "enabled": true},
+      "duplicate of": {"regex": "(?i)duplicate of", "enabled": true},
+      "link to another question": {
+        "regex": "(?i)stackoverflow\\.com/(questions|q)/\\d+",
+        "enabled": false
+      }
+    }
+  },
+  "duplicates": {
+    "closed_reasons": ["Duplicate"],
+    "optional_closed_reasons": ["exact duplicate"],
+    "include_optional_closed_reasons": false
+  },
+  "export": {
+    "comments_on": "question",
+    "group_relevance_max_size": 200
+  },
+  "split": {
+    "seed": 42,
+    "ratios": {"train": 0.8, "val": 0.1, "test": 0.1},
+    "large_group_size": 200,
+    "large_group_split": "train"
+  }
+}

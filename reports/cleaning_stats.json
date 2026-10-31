@@ -1,0 +1,311 @@
+{
+  "started_at": "2026-10-31T14:51:10+00:00",
+  "finished_at": "2026-10-31T14:55:22+00:00",
+  "seconds": 252.2,
+  "steps": [
+    {
+      "entity": "question",
+      "step": "dedup",
+      "rows_in": 272442,
+      "rows_out": 93704,
+      "rows_removed": 178738,
+      "reasons": {
+        "DUPLICATE_COPY": 178738,
+        "MISSING_ID": 0
+      },
+      "note": "one row per id, the copy with the latest fetched_at"
+    },
+    {
+      "entity": "question",
+      "step": "normalize",
+      "rows_in": 93704,
+      "rows_out": 93704,
+      "rows_removed": 0,
+      "reasons": {},
+      "note": "reasons = target fields with a REJECTED check (a row can have several)"
+    },
+    {
+      "entity": "answer",
+      "step": "dedup",
+      "rows_in": 257960,
+      "rows_out": 257960,
+      "rows_removed": 0,
+      "reasons": {
+        "DUPLICATE_COPY": 0,
+        "MISSING_ID": 0
+      },
+      "note": "one row per id, the copy with the latest fetched_at"
+    },
+    {
+      "entity": "answer",
+      "step": "normalize",
+      "rows_in": 257960,
+      "rows_out": 257960,
+      "rows_removed": 0,
+      "reasons": {},
+      "note": "reasons = target fields with a REJECTED check (a row can have several)"
+    },
+    {
+      "entity": "comment",
+      "step": "dedup",
+      "rows_in": 647483,
+      "rows_out": 647383,
+      "rows_removed": 100,
+      "reasons": {
+        "DUPLICATE_COPY": 100,
+        "MISSING_ID": 0
+      },
+      "note": "one row per id, the copy with the latest fetched_at"
+    },
+    {
+      "entity": "comment",
+      "step": "normalize",
+      "rows_in": 647383,
+      "rows_out": 647383,
+      "rows_removed": 0,
+      "reasons": {},
+      "note": "reasons = target fields with a REJECTED check (a row can have several)"
+    },
+    {
+      "entity": "answer",
+      "step": "orphans",
+      "rows_in": 257960,
+      "rows_out": 257960,
+      "rows_removed": 0,
+      "reasons": {
+        "QUESTION_NOT_IN_CLEAN": 0
+      }
+    },
+    {
+      "entity": "comment",
+      "step": "leaky_comments",
+      "rows_in": 647383,
+      "rows_out": 632388,
+      "rows_removed": 14995,
+      "reasons": {
+        "does this answer your question": 8701,
+        "duplicate of": 5897,
+        "possible duplicate": 5017,
+        "already has an answer": 33
+      },
+      "examples": [
+        {
+          "comment_id": 1327335,
+          "post_type": "question",
+          "body": "Duplicate of your previous question? <a href=\"http://stackoverflow.com/questions/1476596/login-code-for-django\">stackoverflow.com/questions/1476596/login-code-for-django</a>",
+          "patterns": [
+            "duplicate of"
+          ]
+        },
+        {
+          "comment_id": 3164433,
+          "post_type": "question",
+          "body": "possible duplicate of <a href=\"http://stackoverflow.com/questions/2982023/writing-header-in-csv-python-with-dictwriter\">writing header in csv python with DictWriter</a>",
+          "patterns": [
+            "possible duplicate",
+            "duplicate of"
+          ]
+        },
+        {
+          "comment_id": 4045825,
+          "post_type": "question",
+          "body": "Possible duplicate of: <a href=\"http://stackoverflow.com/q/733454/64633\">Best way to format integer as string with leading zeros?</a>",
+          "patterns": [
+            "possible duplicate",
+            "duplicate of"
+          ]
+        }
+      ],
+      "note": "a comment can match several patterns"
+    },
+    {
+      "entity": "comment",
+      "step": "orphans",
+      "rows_in": 632388,
+      "rows_out": 632388,
+      "rows_removed": 0,
+      "reasons": {
+        "POST_NOT_IN_CLEAN": 0
+      }
+    },
+    {
+      "entity": "question",
+      "step": "duplicate_pairs",
+      "rows_in": 23470,
+      "rows_out": 23467,
+      "rows_removed": 3,
+      "reasons": {
+        "ORIGINAL_NOT_IN_CLEAN": 3,
+        "SELF_PAIR": 0
+      },
+      "note": "closed_reason in ['Duplicate']; 138 questions closed as ['exact duplicate'] were not used"
+    }
+  ],
+  "field_issues": {
+    "question": {
+      "body_text": {
+        "SHORT_TEXT": 112,
+        "CODE_ONLY": 105
+      },
+      "owner_user_type": {
+        "VALUE_DOES_NOT_EXIST": 2230
+      },
+      "tags": {
+        "TAG_SYNONYM_REPLACED": 2290
+      },
+      "title": {
+        "HTML_ENTITY_DECODED": 11845
+      }
+    },
+    "answer": {
+      "body_text": {
+        "SHORT_TEXT": 10783,
+        "CODE_ONLY": 5617
+      },
+      "owner_user_type": {
+        "VALUE_DOES_NOT_EXIST": 3472
+      }
+    },
+    "comment": {
+      "owner_user_type": {
+        "VALUE_DOES_NOT_EXIST": 11169
+      }
+    }
+  },
+  "tag_synonyms_loaded": 5332,
+  "examples": {
+    "html_body": [
+      {
+        "question_id": 19339,
+        "before": "<p>I have a list of 2-item tuples and I'd like to convert them to 2 lists where the first contains the first item in each tuple and the second list holds the second item.</p>\n<p><strong>For example:</strong></p>\n<pre><code>original = [('a', 1), ('b', 2), ('c', 3), ('d', 4)]\n# and I want to become...…",
+        "after_text": "I have a list of 2-item tuples and I'd like to convert them to 2 lists where the first contains the first item in each tuple and the second list holds the second item.\nFor example:\nIs there a builtin function that does that?\nSee also: Transpose list of lists if the specific choice of lists vs. tuple…",
+        "after_code_blocks": 1
+      },
+      {
+        "question_id": 22617,
+        "before": "<p>I need to find out how to format numbers as strings. My code is here:</p>\n\n<pre><code>return str(hours)+\":\"+str(minutes)+\":\"+str(seconds)+\" \"+ampm\n</code></pre>\n\n<p>Hours and minutes are integers, and seconds is a float.  the str() function will convert all of these numbers to the tenths (0.1) pl…",
+        "after_text": "I need to find out how to format numbers as strings. My code is here:\nHours and minutes are integers, and seconds is a float. the str() function will convert all of these numbers to the tenths (0.1) place. So instead of my string outputting \"5:30:59.07 pm\", it would display something like \"5.0:30.0:…",
+        "after_code_blocks": 1
+      },
+      {
+        "question_id": 38601,
+        "before": "<p>How can I use the nifty JavaScript date and time widgets that the default admin uses with my custom view?</p>\n\n<p>I have looked through <a href=\"https://docs.djangoproject.com/en/dev/topics/forms/\" rel=\"noreferrer\">the Django forms documentation</a>, and it briefly mentions django.contrib.admin.w…",
+        "after_text": "How can I use the nifty JavaScript date and time widgets that the default admin uses with my custom view?\nI have looked through the Django forms documentation, and it briefly mentions django.contrib.admin.widgets, but I don't know how to use it?\nHere is my template that I want it applied on.\nAlso, I…",
+        "after_code_blocks": 2
+      }
+    ],
+    "title_entities": [
+      {
+        "question_id": 68282,
+        "before": "Why do you need explicitly have the &quot;self&quot; argument in a Python method?",
+        "after": "Why do you need explicitly have the \"self\" argument in a Python method?"
+      },
+      {
+        "question_id": 111954,
+        "before": "Using Python&#39;s ftplib to get a directory listing, portably",
+        "after": "Using Python's ftplib to get a directory listing, portably"
+      },
+      {
+        "question_id": 181530,
+        "before": "Styling multi-line conditions in &#39;if&#39; statements?",
+        "after": "Styling multi-line conditions in 'if' statements?"
+      }
+    ],
+    "tag_synonyms": [
+      {
+        "question_id": 13055,
+        "before": [
+          "language-agnostic",
+          "boxing",
+          "glossary",
+          "unboxing"
+        ],
+        "after": [
+          "language-agnostic",
+          "boxing",
+          "glossary"
+        ]
+      },
+      {
+        "question_id": 1842414,
+        "before": [
+          "python",
+          "built-in",
+          "dir"
+        ],
+        "after": [
+          "python",
+          "built-in",
+          "directory"
+        ]
+      },
+      {
+        "question_id": 4143502,
+        "before": [
+          "python",
+          "matplotlib",
+          "geometry",
+          "scatter-plot",
+          "scatter"
+        ],
+        "after": [
+          "python",
+          "matplotlib",
+          "geometry",
+          "scatter-plot"
+        ]
+      }
+    ]
+  },
+  "comment_count_mismatch": {
+    "api_more_than_kept": 14776,
+    "api_less_than_kept": 4,
+    "note": "kept = question comments after leak and orphan filters"
+  },
+  "groups": {
+    "groups": 4806,
+    "questions_in_groups": 27283,
+    "largest_sizes": [
+      8042,
+      162,
+      129,
+      84,
+      81,
+      76,
+      74,
+      71,
+      69,
+      68
+    ],
+    "size_distribution": {
+      "2": 2624,
+      "3": 833,
+      "4-5": 657,
+      "6-10": 463,
+      "11-50": 210,
+      "51-200": 18,
+      ">200": 1
+    }
+  },
+  "split": {
+    "train": {
+      "questions": 76828,
+      "duplicate_queries": 17645
+    },
+    "val": {
+      "questions": 8373,
+      "duplicate_queries": 1170
+    },
+    "test": {
+      "questions": 8503,
+      "duplicate_queries": 1286
+    }
+  },
+  "outputs": {
+    "questions": 93704,
+    "answers": 257960,
+    "comments": 632388,
+    "duplicate_pairs": 23467,
+    "duplicate_groups": 4806
+  }
+}

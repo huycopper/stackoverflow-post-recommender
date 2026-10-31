@@ -1,0 +1,8 @@
+# The repo is mounted at run time; keep the build context tiny.
+data/
+reports/
+.git/
+.venv/
+**/__pycache__/
+.pytest_cache/
+.ruff_cache/

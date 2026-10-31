@@ -11,6 +11,10 @@ dev = ["pytest>=8", "ruff>=0.6"]
 # Flat Parquet tables and the Excel workbook for exploring the raw data (so_recommender.explore).
 # tzdata: Windows has no time zone database, which pyarrow needs for the UTC timestamps.
 explore = ["pyarrow>=17", "openpyxl>=3.1", "tzdata"]
+# EDA on data/clean (so_recommender.eda): summary statistics, figures, TF-IDF/SVD/k-means.
+eda = ["pyarrow>=17", "pandas>=2.2", "matplotlib>=3.9", "scikit-learn>=1.5"]
+# Cleaning pipeline (so_recommender.clean). Needs Java 17; usually run in docker/spark.
+clean = ["pyspark==3.5.3"]
 
 [tool.uv]
 default-groups = ["dev", "explore"]

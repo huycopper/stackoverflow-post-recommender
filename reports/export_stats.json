@@ -1,0 +1,29 @@
+{
+  "documents": 93704,
+  "documents_with_comments": 68458,
+  "queries": 20101,
+  "queries_by_split": {
+    "test": {
+      "queries": 1286,
+      "relevance_group": 1286
+    },
+    "train": {
+      "queries": 17645,
+      "relevance_originals": 7053,
+      "relevance_group": 10592
+    },
+    "val": {
+      "queries": 1170,
+      "relevance_group": 1170
+    }
+  },
+  "files": {
+    "data/clean/documents.json": 96.2,
+    "data/clean/qrels.json": 3.5
+  },
+  "file_size_unit": "MB",
+  "policy": {
+    "comments_on": "question",
+    "group_relevance_max_size": 200
+  }
+}

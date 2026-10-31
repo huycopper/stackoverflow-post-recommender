@@ -1,0 +1,15 @@
+# Cleaning pipeline in a local Spark container.
+#   docker compose -f docker-compose.clean.yml build
+#   docker compose -f docker-compose.clean.yml run --rm spark-clean                 # full run
+#   docker compose -f docker-compose.clean.yml run --rm spark-clean pytest tests/clean
+services:
+  spark-clean:
+    build:
+      context: .
+      dockerfile: docker/spark/Dockerfile
+    image: so-recommender-spark:0.1
+    working_dir: /app
+    volumes:
+      - ./:/app
+    ports:
+      - "14040:4040"   # Spark UI while a run is going
