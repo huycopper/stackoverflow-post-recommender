@@ -1,0 +1,601 @@
+{
+  "variable_types": {
+    "question_id": "identifier",
+    "title": "text",
+    "body_text": "text",
+    "body_code": "text (list)",
+    "tags": "categorical, multi-valued",
+    "score": "numeric, discrete (can be negative)",
+    "view_count": "numeric, discrete",
+    "answer_count": "numeric, discrete",
+    "comment_count": "numeric, discrete",
+    "creation_date": "time",
+    "is_closed_duplicate": "categorical, binary",
+    "closed_reason": "categorical",
+    "split": "categorical",
+    "role (duplicate / original / other)": "categorical, derived from duplicate_pairs"
+  },
+  "overview": {
+    "questions": 93704,
+    "answers": 257960,
+    "comments": 632388,
+    "comments_on_questions": 240116,
+    "duplicate_pairs": 23467,
+    "duplicate_groups": 4806,
+    "created_from": "2008-08-02",
+    "created_to": "2026-10-24"
+  },
+  "questions_numeric": {
+    "score": {
+      "count": 93704,
+      "mean": 34.534,
+      "median": 1.0,
+      "mode": 0.0,
+      "std": 203.556,
+      "variance": 41435.069,
+      "min": -35.0,
+      "q1": 0.0,
+      "q3": 6.0,
+      "p99": 549.0,
+      "max": 27546.0,
+      "skewness": 42.302,
+      "kurtosis": 4106.218
+    },
+    "view_count": {
+      "count": 93704,
+      "mean": 48759.921,
+      "median": 1026.0,
+      "mode": 1.0,
+      "std": 219245.477,
+      "variance": 48068579218.336,
+      "min": 1.0,
+      "q1": 182.0,
+      "q3": 9274.0,
+      "p99": 837295.0500000002,
+      "max": 9011707.0,
+      "skewness": 13.699,
+      "kurtosis": 301.104
+    },
+    "answer_count": {
+      "count": 93704,
+      "mean": 2.753,
+      "median": 1.0,
+      "mode": 1.0,
+      "std": 4.216,
+      "variance": 17.776,
+      "min": 0.0,
+      "q1": 1.0,
+      "q3": 3.0,
+      "p99": 21.0,
+      "max": 191.0,
+      "skewness": 5.922,
+      "kurtosis": 85.367
+    },
+    "comment_count": {
+      "count": 93704,
+      "mean": 2.562,
+      "median": 2.0,
+      "mode": 0.0,
+      "std": 2.893,
+      "variance": 8.371,
+      "min": 0.0,
+      "q1": 0.0,
+      "q3": 4.0,
+      "p99": 13.0,
+      "max": 40.0,
+      "skewness": 2.199,
+      "kurtosis": 8.916
+    },
+    "title_chars": {
+      "count": 93704,
+      "mean": 57.273,
+      "median": 54.0,
+      "mode": 45.0,
+      "std": 21.777,
+      "variance": 474.229,
+      "min": 15.0,
+      "q1": 42.0,
+      "q3": 68.0,
+      "p99": 128.0,
+      "max": 150.0,
+      "skewness": 1.055,
+      "kurtosis": 1.573
+    },
+    "body_words": {
+      "count": 93704,
+      "mean": 93.556,
+      "median": 75.0,
+      "mode": 57.0,
+      "std": 74.447,
+      "variance": 5542.413,
+      "min": 0.0,
+      "q1": 48.0,
+      "q3": 117.0,
+      "p99": 363.97000000000116,
+      "max": 1936.0,
+      "skewness": 3.782,
+      "kurtosis": 35.564
+    },
+    "code_blocks": {
+      "count": 93704,
+      "mean": 1.697,
+      "median": 1.0,
+      "mode": 1.0,
+      "std": 1.462,
+      "variance": 2.137,
+      "min": 0.0,
+      "q1": 1.0,
+      "q3": 2.0,
+      "p99": 6.0,
+      "max": 40.0,
+      "skewness": 1.907,
+      "kurtosis": 11.859
+    },
+    "n_tags": {
+      "count": 93704,
+      "mean": 3.029,
+      "median": 3.0,
+      "mode": 3.0,
+      "std": 1.187,
+      "variance": 1.408,
+      "min": 1.0,
+      "q1": 2.0,
+      "q3": 4.0,
+      "p99": 5.0,
+      "max": 5.0,
+      "skewness": 0.1,
+      "kurtosis": -0.874
+    }
+  },
+  "answers_numeric": {
+    "score": {
+      "count": 257960,
+      "mean": 26.208,
+      "median": 2.0,
+      "mode": 0.0,
+      "std": 167.691,
+      "variance": 28120.232,
+      "min": -50.0,
+      "q1": 0.0,
+      "q3": 9.0,
+      "p99": 405.0,
+      "max": 35297.0,
+      "skewness": 60.927,
+      "kurtosis": 9042.816
+    },
+    "body_words": {
+      "count": 257960,
+      "mean": 67.042,
+      "median": 41.0,
+      "mode": 0.0,
+      "std": 96.216,
+      "variance": 9257.506,
+      "min": 0.0,
+      "q1": 19.0,
+      "q3": 80.0,
+      "p99": 426.0,
+      "max": 3754.0,
+      "skewness": 7.711,
+      "kurtosis": 131.765
+    }
+  },
+  "comments_numeric": {
+    "score": {
+      "count": 632388,
+      "mean": 1.688,
+      "median": 0.0,
+      "mode": 0.0,
+      "std": 9.832,
+      "variance": 96.669,
+      "min": 0.0,
+      "q1": 0.0,
+      "q3": 1.0,
+      "p99": 27.0,
+      "max": 1884.0,
+      "skewness": 41.28,
+      "kurtosis": 4334.923
+    },
+    "words": {
+      "count": 632388,
+      "mean": 28.062,
+      "median": 22.0,
+      "mode": 13.0,
+      "std": 20.779,
+      "variance": 431.768,
+      "min": 0.0,
+      "q1": 13.0,
+      "q3": 37.0,
+      "p99": 100.0,
+      "max": 215.0,
+      "skewness": 1.48,
+      "kurtosis": 2.264
+    }
+  },
+  "categorical": {
+    "role": {
+      "other": 66421,
+      "duplicate": 20101,
+      "original": 7182
+    },
+    "split": {
+      "train": 76828,
+      "test": 8503,
+      "val": 8373
+    },
+    "closed_reason": {
+      "(open)": 71946,
+      "Duplicate": 20103,
+      "Not suitable for this site": 584,
+      "Needs details or clarity": 332,
+      "Needs more focus": 313,
+      "Opinion-based": 209,
+      "exact duplicate": 138,
+      "not constructive": 53,
+      "not a real question": 15,
+      "off topic": 8,
+      "too localized": 3
+    },
+    "is_accepted_answer_share": 0.197,
+    "top_tags": {
+      "python": 81646,
+      "python-3.x": 13130,
+      "pandas": 12490,
+      "dataframe": 4809,
+      "django": 4645,
+      "matplotlib": 4164,
+      "numpy": 4163,
+      "list": 3928,
+      "dictionary": 2441,
+      "python-2.7": 2355,
+      "pip": 2111,
+      "string": 2098,
+      "flask": 1970,
+      "selenium-webdriver": 1615,
+      "json": 1528,
+      "tkinter": 1456,
+      "arrays": 1455,
+      "datetime": 1344,
+      "csv": 1339,
+      "jupyter-notebook": 1255,
+      "regex": 1171,
+      "tensorflow": 1026,
+      "python-requests": 979,
+      "function": 960,
+      "opencv": 946,
+      "windows": 930,
+      "class": 828,
+      "sqlalchemy": 799,
+      "linux": 798,
+      "for-loop": 785
+    },
+    "distinct_tags": 8503
+  },
+  "by_role": {
+    "duplicate": {
+      "questions": 20101,
+      "no_comments": 0.248,
+      "no_answers": 0.255,
+      "has_code": 0.845,
+      "median_comment_count": 2.0,
+      "median_body_words": 62.0
+    },
+    "original": {
+      "questions": 7182,
+      "no_comments": 0.35,
+      "no_answers": 0.0,
+      "has_code": 0.758,
+      "median_comment_count": 1.0,
+      "median_body_words": 61.0
+    },
+    "other": {
+      "questions": 66421,
+      "no_comments": 0.267,
+      "no_answers": 0.107,
+      "has_code": 0.82,
+      "median_comment_count": 2.0,
+      "median_body_words": 81.0
+    }
+  },
+  "spearman_correlation": {
+    "score": {
+      "score": 1.0,
+      "view_count": 0.752,
+      "answer_count": 0.563,
+      "comment_count": -0.075,
+      "title_chars": -0.089,
+      "body_words": -0.012,
+      "code_blocks": -0.055,
+      "n_tags": 0.118
+    },
+    "view_count": {
+      "score": 0.752,
+      "view_count": 1.0,
+      "answer_count": 0.658,
+      "comment_count": -0.06,
+      "title_chars": -0.116,
+      "body_words": -0.047,
+      "code_blocks": -0.088,
+      "n_tags": 0.129
+    },
+    "answer_count": {
+      "score": 0.563,
+      "view_count": 0.658,
+      "answer_count": 1.0,
+      "comment_count": -0.086,
+      "title_chars": -0.122,
+      "body_words": -0.123,
+      "code_blocks": -0.067,
+      "n_tags": 0.011
+    },
+    "comment_count": {
+      "score": -0.075,
+      "view_count": -0.06,
+      "answer_count": -0.086,
+      "comment_count": 1.0,
+      "title_chars": -0.009,
+      "body_words": 0.082,
+      "code_blocks": 0.067,
+      "n_tags": -0.033
+    },
+    "title_chars": {
+      "score": -0.089,
+      "view_count": -0.116,
+      "answer_count": -0.122,
+      "comment_count": -0.009,
+      "title_chars": 1.0,
+      "body_words": 0.159,
+      "code_blocks": 0.068,
+      "n_tags": 0.087
+    },
+    "body_words": {
+      "score": -0.012,
+      "view_count": -0.047,
+      "answer_count": -0.123,
+      "comment_count": 0.082,
+      "title_chars": 0.159,
+      "body_words": 1.0,
+      "code_blocks": 0.185,
+      "n_tags": 0.186
+    },
+    "code_blocks": {
+      "score": -0.055,
+      "view_count": -0.088,
+      "answer_count": -0.067,
+      "comment_count": 0.067,
+      "title_chars": 0.068,
+      "body_words": 0.185,
+      "code_blocks": 1.0,
+      "n_tags": 0.063
+    },
+    "n_tags": {
+      "score": 0.118,
+      "view_count": 0.129,
+      "answer_count": 0.011,
+      "comment_count": -0.033,
+      "title_chars": 0.087,
+      "body_words": 0.186,
+      "code_blocks": 0.063,
+      "n_tags": 1.0
+    }
+  },
+  "group_sizes": {
+    "distribution": {
+      "2": 2624,
+      "3": 833,
+      "4-5": 657,
+      "6-10": 463,
+      "11-50": 210,
+      "51-200": 18,
+      ">200": 1
+    },
+    "largest": [
+      8042,
+      162,
+      129,
+      84,
+      81,
+      76,
+      74,
+      71,
+      69,
+      68
+    ],
+    "originals_per_duplicate": {
+      "count": 20101,
+      "mean": 1.167,
+      "median": 1.0,
+      "mode": 1.0,
+      "std": 0.464,
+      "variance": 0.215,
+      "min": 1.0,
+      "q1": 1.0,
+      "q3": 1.0,
+      "p99": 3.0,
+      "max": 5.0,
+      "skewness": 3.343,
+      "kurtosis": 13.646
+    }
+  },
+  "cosine_similarity": {
+    "C duplicate pairs": {
+      "mean": 0.176,
+      "median": 0.1521,
+      "p10": 0.0316,
+      "p90": 0.3498
+    },
+    "C random pairs": {
+      "mean": 0.0199,
+      "median": 0.012,
+      "p10": 0.0,
+      "p90": 0.0495
+    },
+    "C+Cm duplicate pairs": {
+      "mean": 0.1747,
+      "median": 0.1587,
+      "p10": 0.0533,
+      "p90": 0.3148
+    },
+    "C+Cm random pairs": {
+      "mean": 0.0243,
+      "median": 0.0182,
+      "p10": 0.0,
+      "p90": 0.0535
+    },
+    "comments_effect_on_duplicate_pairs": {
+      "pairs": 23467,
+      "pairs_where_query_has_comments": 17844,
+      "mean_gain_all": -0.0013,
+      "mean_gain_query_has_comments": 0.0022,
+      "share_higher_with_comments": 0.471,
+      "share_lower_with_comments": 0.521
+    },
+    "separation": {
+      "random_p95_C": 0.0681,
+      "duplicate_pairs_above_it_C": 0.788,
+      "duplicate_pairs_above_it_CCm": 0.852
+    }
+  },
+  "kmeans": {
+    "inertia_by_k": {
+      "2": 17166.31154747134,
+      "3": 16753.37187662873,
+      "4": 16448.80587912644,
+      "5": 16222.128606990365,
+      "6": 15972.877780625027,
+      "7": 15696.61866770311,
+      "8": 15537.302529070963,
+      "9": 15336.749659448267,
+      "10": 15171.20905822143,
+      "11": 15000.509107000984,
+      "12": 14844.024241915213
+    },
+    "k": 8,
+    "clusters": [
+      {
+        "cluster": 0,
+        "size": 3028,
+        "top_terms": [
+          "file",
+          "files",
+          "script",
+          "py",
+          "code",
+          "run",
+          "using",
+          "error"
+        ]
+      },
+      {
+        "cluster": 1,
+        "size": 1816,
+        "top_terms": [
+          "list",
+          "lists",
+          "elements",
+          "want",
+          "like",
+          "element",
+          "values",
+          "way"
+        ]
+      },
+      {
+        "cluster": 2,
+        "size": 6767,
+        "top_terms": [
+          "code",
+          "function",
+          "like",
+          "class",
+          "want",
+          "using",
+          "use",
+          "way"
+        ]
+      },
+      {
+        "cluster": 3,
+        "size": 1507,
+        "top_terms": [
+          "install",
+          "pip",
+          "installed",
+          "error",
+          "version",
+          "packages",
+          "package",
+          "installing"
+        ]
+      },
+      {
+        "cluster": 4,
+        "size": 1259,
+        "top_terms": [
+          "string",
+          "strings",
+          "like",
+          "convert",
+          "want",
+          "characters",
+          "character",
+          "using"
+        ]
+      },
+      {
+        "cluster": 5,
+        "size": 2311,
+        "top_terms": [
+          "dataframe",
+          "column",
+          "pandas",
+          "columns",
+          "data",
+          "values",
+          "rows",
+          "like"
+        ]
+      },
+      {
+        "cluster": 6,
+        "size": 2414,
+        "top_terms": [
+          "django",
+          "flask",
+          "error",
+          "using",
+          "request",
+          "code",
+          "html",
+          "app"
+        ]
+      },
+      {
+        "cluster": 7,
+        "size": 898,
+        "top_terms": [
+          "plot",
+          "matplotlib",
+          "axis",
+          "graph",
+          "data",
+          "plots",
+          "code",
+          "like"
+        ]
+      }
+    ]
+  },
+  "figures": [
+    "fig01_questions_per_month.png",
+    "fig02_top_tags.png",
+    "fig03_histograms.png",
+    "fig04_boxplots_by_role.png",
+    "fig05_score_vs_views.png",
+    "fig06_scatter_matrix.png",
+    "fig07_correlation.png",
+    "fig08_group_sizes.png",
+    "fig09_similarity.png",
+    "fig10_svd_by_tag.png",
+    "fig11_kmeans_elbow.png"
+  ]
+}
