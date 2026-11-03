@@ -1,25 +1,26 @@
 """Read raw API responses (data/raw/{endpoint}/*.jsonl.gz) and keep one row per id.
 
-Each raw line is one response with up to 100 items. Only the fields in the source's item_schema
+Each raw line is one response with up to 100 items. Only the fields in the table's item_schema
 are parsed; the item is kept whole in a struct column named `raw`.
 """
 
 from __future__ import annotations
 
 from pathlib import Path
+from typing import Any
 
 from pyspark.sql import DataFrame, SparkSession, Window
 from pyspark.sql import functions as F
 from pyspark.sql.types import ArrayType, StringType, StructField, StructType
 
-from ..fields import Source
 
-
-def load_items(spark: SparkSession, raw_dir: str | Path, source: Source) -> DataFrame:
+def load_items(spark: SparkSession, raw_dir: str | Path, source: dict[str, Any]) -> DataFrame:
     """Columns: fetched_at (string, ISO UTC), endpoint, raw (struct of the item)."""
     root = Path(raw_dir)
-    files = [str(p) for ep in source.endpoints for p in sorted((root / ep).glob("*.jsonl.gz"))]
-    item = spark.createDataFrame([], source.item_schema).schema
+    files = []
+    for endpoint in source["endpoints"]:
+        files += [str(p) for p in sorted((root / endpoint).glob("*.jsonl.gz"))]
+    item = spark.createDataFrame([], source["item_schema"]).schema
     meta = [StructField("fetched_at", StringType()), StructField("endpoint", StringType())]
     if not files:
         return spark.createDataFrame([], StructType([*meta, StructField("raw", item)]))

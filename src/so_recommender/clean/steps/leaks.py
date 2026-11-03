@@ -16,10 +16,5 @@ def flag_leaks(comments: DataFrame, patterns: dict[str, str]) -> DataFrame:
     if not patterns:
         return comments.withColumn("leak_patterns", F.expr("CAST(array() AS ARRAY<STRING>)"))
     body = F.col("raw.body")
-    return comments.withColumn(
-        "leak_patterns",
-        F.filter(
-            F.array(*(F.when(body.rlike(rx), F.lit(name)) for name, rx in patterns.items())),
-            lambda name: name.isNotNull(),
-        ),
-    )
+    matches = [F.when(body.rlike(regex), F.lit(name)) for name, regex in patterns.items()]
+    return comments.withColumn("leak_patterns", F.array_compact(F.array(*matches)))

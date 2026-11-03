@@ -16,7 +16,7 @@ from pyspark.sql import DataFrame, SparkSession
 from pyspark.sql import functions as F
 
 from .config import CleanConfig
-from .fields import ANSWER, COMMENT, QUESTION, TAG_SYNONYM, Source
+from .fields import ANSWER, COMMENT, QUESTION, TAG_SYNONYM
 from .normalize import REJECTED, normalize_entity
 from .stats import CleaningStats, count_by, examples
 from .steps.groups import assign_splits, connected_components
@@ -85,7 +85,7 @@ def _write(df: DataFrame, path: Path) -> None:
 
 def load_synonyms(spark: SparkSession, cfg: CleanConfig) -> dict[str, str]:
     items = load_items(spark, cfg.raw_dir, TAG_SYNONYM)
-    latest, _ = keep_latest(items, TAG_SYNONYM.id_field)
+    latest, _ = keep_latest(items, TAG_SYNONYM["id_field"])
     rows = latest.select("raw.from_tag", "raw.to_tag").collect()
     return {r.from_tag.lower(): r.to_tag.lower() for r in rows if r.from_tag and r.to_tag}
 
@@ -94,14 +94,14 @@ def clean_entity(
     spark: SparkSession,
     cfg: CleanConfig,
     entity: str,
-    source: Source,
+    source: dict[str, Any],
     tag_synonyms: dict[str, str],
     stats: CleaningStats,
 ) -> tuple[DataFrame, list[DataFrame]]:
     """Load, dedup and normalize one entity. Returns (kept rows, rejected-row frames)."""
     items = load_items(spark, cfg.raw_dir, source)
     n_raw = items.count()
-    latest, missing = keep_latest(items, source.id_field)
+    latest, missing = keep_latest(items, source["id_field"])
     latest = latest.persist(CACHE)
     n_latest, n_missing = latest.count(), missing.count()
     stats.step(
@@ -113,7 +113,7 @@ def clean_entity(
         note="one row per id, the copy with the latest fetched_at",
     )
 
-    normalized = normalize_entity(latest, source.fields, tag_synonyms).persist(CACHE)
+    normalized = normalize_entity(latest, source["fields"], tag_synonyms).persist(CACHE)
     bad = normalized.filter(F.col("quality_status") == REJECTED)
     kept = normalized.filter(F.col("quality_status") != REJECTED)
     stats.step(
@@ -127,8 +127,8 @@ def clean_entity(
     stats.record_field_issues(entity, normalized)
     latest.unpersist()  # `normalized` is cached and computed by now
     rejected = [
-        _rejected(missing, source.id_field, "dedup", F.array(F.lit("MISSING_ID"))),
-        _rejected(bad, source.id_field, "normalize", F.col("rejected_fields"), "field_issues"),
+        _rejected(missing, source["id_field"], "dedup", F.array(F.lit("MISSING_ID"))),
+        _rejected(bad, source["id_field"], "normalize", F.col("rejected_fields"), "field_issues"),
     ]
     return kept, rejected
 
