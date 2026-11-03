@@ -279,7 +279,10 @@ def run(cfg: CleanConfig, spark: SparkSession) -> dict[str, Any]:
         questions.join(answer_counts, "question_id", "left")
         .join(comment_counts, "question_id", "left")
         .fillna(0, ["answer_count", "comment_count"])
-        .withColumn("is_closed_duplicate", F.col("closed_reason").isin(*dup_reasons))
+        .withColumn(
+            "is_closed_duplicate",
+            F.coalesce(F.col("closed_reason").isin(*dup_reasons), F.lit(False)),
+        )
         .persist(CACHE)
     )
     stats.extra["comment_count_mismatch"] = {

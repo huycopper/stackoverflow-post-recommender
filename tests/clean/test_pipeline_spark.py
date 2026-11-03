@@ -183,6 +183,8 @@ def test_questions_are_deduplicated_normalized_and_recounted(cleaned):
     assert q1["creation_date"] == datetime.fromtimestamp(CREATED, UTC).replace(tzinfo=None)
     assert questions[2]["is_closed_duplicate"] and questions[2]["comment_count"] == 1
     assert not questions[3]["is_closed_duplicate"]  # "exact duplicate" is off by default
+    # never null: a question that was not closed at all is False, not unknown
+    assert questions[1]["is_closed_duplicate"] is False
 
 
 def test_comments_lose_leaks_and_orphans_and_get_their_question(cleaned):
