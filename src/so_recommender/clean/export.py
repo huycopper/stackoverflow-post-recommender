@@ -24,7 +24,6 @@ from pyspark.sql import SparkSession
 from pyspark.sql import functions as F
 
 from .config import CleanConfig
-from .contract import load_contracts
 
 
 def build_qrels(
@@ -73,7 +72,6 @@ def write_json_array(path: Path, rows: Iterator[dict[str, Any]]) -> int:
 
 
 def export(cfg: CleanConfig, spark: SparkSession) -> dict[str, Any]:
-    policy = load_contracts().tables["export"]
     clean = cfg.clean_dir
 
     def table(name: str):
@@ -81,7 +79,7 @@ def export(cfg: CleanConfig, spark: SparkSession) -> dict[str, Any]:
 
     comments = (
         table("comments")
-        .filter(F.col("post_type") == policy["comments_on"])
+        .filter(F.col("post_type") == "question")
         .groupBy("question_id")
         .agg(
             F.sort_array(F.collect_list(F.struct("creation_date", "comment_id", "text"))).alias("c")
@@ -109,7 +107,7 @@ def export(cfg: CleanConfig, spark: SparkSession) -> dict[str, Any]:
     pairs = [(r.duplicate_id, r.original_id) for r in table("duplicate_pairs").collect()]
     groups = {r.question_id: r.group_id for r in table("duplicate_groups").collect()}
     splits = {r.question_id: r.split for r in table("splits").collect()}
-    qrels = build_qrels(pairs, groups, splits, policy["group_relevance_max_size"])
+    qrels = build_qrels(pairs, groups, splits, cfg.group_relevance_max_size)
     write_json_array(cfg.qrels_file, iter(qrels))
 
     by_split: dict[str, dict[str, int]] = defaultdict(lambda: defaultdict(int))
@@ -126,7 +124,7 @@ def export(cfg: CleanConfig, spark: SparkSession) -> dict[str, Any]:
             str(p): round(p.stat().st_size / 2**20, 1) for p in (cfg.documents_file, cfg.qrels_file)
         },
         "file_size_unit": "MB",
-        "policy": policy,
+        "group_relevance_max_size": cfg.group_relevance_max_size,
     }
     cfg.export_stats_file.parent.mkdir(parents=True, exist_ok=True)
     cfg.export_stats_file.write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")

@@ -1,6 +1,6 @@
 """Turn Stack Overflow HTML into plain text, without Spark, so it can be unit tested.
 
-Spark only wraps these functions in UDFs (normalizers/html.py, normalizers/text.py).
+Spark only wraps these functions in UDFs (normalize.py).
 """
 
 from __future__ import annotations

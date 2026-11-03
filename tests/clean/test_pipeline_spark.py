@@ -10,7 +10,9 @@ from __future__ import annotations
 import json
 import os
 import sys
+from dataclasses import replace
 from datetime import UTC, datetime
+from pathlib import Path
 
 import pytest
 
@@ -20,14 +22,13 @@ pytestmark = pytest.mark.skipif(
     reason="Spark needs winutils to write files on Windows; run in docker/spark",
 )
 
-from so_recommender.clean.config import CleanConfig  # noqa: E402
-from so_recommender.clean.contract import load_contracts  # noqa: E402
+from so_recommender.clean.config import build_session, load_config  # noqa: E402
 from so_recommender.clean.export import build_qrels, export  # noqa: E402
-from so_recommender.clean.normalizers.tags import normalize_tags  # noqa: E402
+from so_recommender.clean.normalize import STACK_OVERFLOW_START, normalize_tags  # noqa: E402
 from so_recommender.clean.pipeline import run  # noqa: E402
-from so_recommender.clean.session import build_session  # noqa: E402
 from so_recommender.collect.raw_store import RawStore  # noqa: E402
 
+CONFIG = Path(__file__).parents[2] / "config" / "clean.toml"
 DAY1 = datetime(2026, 10, 24, tzinfo=UTC)
 DAY2 = datetime(2026, 10, 25, tzinfo=UTC)
 CREATED = 1_300_000_000  # 2011
@@ -154,7 +155,8 @@ def cleaned(spark, tmp_path_factory):
         "tag_synonyms", "u", {}, {"items": [{"from_tag": "python-3", "to_tag": "python-3.x"}]}
     )
 
-    cfg = CleanConfig(
+    cfg = replace(
+        load_config(CONFIG),
         raw_dir=tmp / "raw",
         clean_dir=tmp / "clean",
         stats_file=tmp / "reports" / "stats.json",
@@ -261,9 +263,10 @@ def test_qrels_use_direct_originals_in_huge_groups():
     ]
 
 
-def test_contracts_load_and_tags_normalize():
-    contracts = load_contracts()
-    assert contracts.sources["question"]["id_field"] == "question_id"
+def test_config_rules_and_tags_normalize():
+    cfg = load_config(CONFIG)
+    assert cfg.closed_reasons == ["Duplicate"] and "possible duplicate" in cfg.leak_patterns
+    assert STACK_OVERFLOW_START == datetime(2008, 7, 1, tzinfo=UTC).timestamp()
     assert normalize_tags([" Python", "python", "py3"], {"py3": "python-3.x"}) == {
         "tags": ["python", "python-3.x"],
         "replaced": True,

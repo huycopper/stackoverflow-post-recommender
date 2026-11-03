@@ -22,8 +22,5 @@
     "data/clean/qrels.json": 3.5
   },
   "file_size_unit": "MB",
-  "policy": {
-    "comments_on": "question",
-    "group_relevance_max_size": 200
-  }
+  "group_relevance_max_size": 200
 }

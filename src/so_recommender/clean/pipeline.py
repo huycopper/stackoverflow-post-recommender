@@ -16,14 +16,12 @@ from pyspark.sql import DataFrame, SparkSession
 from pyspark.sql import functions as F
 
 from .config import CleanConfig
-from .contract import ENTITIES, Contracts, load_contracts
-from .normalizers.base import REJECTED, NormalizationContext
+from .fields import ANSWER, COMMENT, QUESTION, TAG_SYNONYM, Source
+from .normalize import REJECTED, normalize_entity
 from .stats import CleaningStats, count_by, examples
-from .steps.dedup import keep_latest
 from .steps.groups import assign_splits, connected_components
 from .steps.leaks import flag_leaks
-from .steps.load_raw import load_items
-from .steps.normalize import normalize_entity
+from .steps.load import keep_latest, load_items
 
 log = logging.getLogger(__name__)
 
@@ -70,15 +68,10 @@ COMMENT_COLUMNS = [
 ]
 
 
-def _id_path(contracts: Contracts, entity: str) -> str:
-    source = contracts.sources[entity]
-    return next(p for p, t in source["fields"].items() if t == source["id_field"])
-
-
-def _rejected(df: DataFrame, id_path: str, step: str, reasons: F.Column, *extra: str) -> DataFrame:
+def _rejected(df: DataFrame, id_field: str, step: str, reasons: F.Column, *extra: str) -> DataFrame:
     """Rejected rows keep the raw item, so a reviewer can see what was dropped and why."""
     return df.select(
-        F.col(f"raw.{id_path}").alias("id"),
+        F.col(f"raw.{id_field}").alias("id"),
         F.lit(step).alias("step"),
         reasons.alias("reasons"),
         *extra,
@@ -90,9 +83,9 @@ def _write(df: DataFrame, path: Path) -> None:
     df.coalesce(1).write.mode("overwrite").parquet(str(path))
 
 
-def load_synonyms(spark: SparkSession, cfg: CleanConfig, contracts: Contracts) -> dict[str, str]:
-    items = load_items(spark, cfg.raw_dir, contracts.sources["tag_synonym"])
-    latest, _ = keep_latest(items, "from_tag")
+def load_synonyms(spark: SparkSession, cfg: CleanConfig) -> dict[str, str]:
+    items = load_items(spark, cfg.raw_dir, TAG_SYNONYM)
+    latest, _ = keep_latest(items, TAG_SYNONYM.id_field)
     rows = latest.select("raw.from_tag", "raw.to_tag").collect()
     return {r.from_tag.lower(): r.to_tag.lower() for r in rows if r.from_tag and r.to_tag}
 
@@ -100,16 +93,15 @@ def load_synonyms(spark: SparkSession, cfg: CleanConfig, contracts: Contracts) -
 def clean_entity(
     spark: SparkSession,
     cfg: CleanConfig,
-    contracts: Contracts,
     entity: str,
-    context: NormalizationContext,
+    source: Source,
+    tag_synonyms: dict[str, str],
     stats: CleaningStats,
 ) -> tuple[DataFrame, list[DataFrame]]:
     """Load, dedup and normalize one entity. Returns (kept rows, rejected-row frames)."""
-    id_path = _id_path(contracts, entity)
-    items = load_items(spark, cfg.raw_dir, contracts.sources[entity])
+    items = load_items(spark, cfg.raw_dir, source)
     n_raw = items.count()
-    latest, missing = keep_latest(items, id_path)
+    latest, missing = keep_latest(items, source.id_field)
     latest = latest.persist(CACHE)
     n_latest, n_missing = latest.count(), missing.count()
     stats.step(
@@ -121,8 +113,7 @@ def clean_entity(
         note="one row per id, the copy with the latest fetched_at",
     )
 
-    normalized, _ = normalize_entity(latest, entity, contracts, context)
-    normalized = normalized.persist(CACHE)
+    normalized = normalize_entity(latest, source.fields, tag_synonyms).persist(CACHE)
     bad = normalized.filter(F.col("quality_status") == REJECTED)
     kept = normalized.filter(F.col("quality_status") != REJECTED)
     stats.step(
@@ -136,8 +127,8 @@ def clean_entity(
     stats.record_field_issues(entity, normalized)
     latest.unpersist()  # `normalized` is cached and computed by now
     rejected = [
-        _rejected(missing, id_path, "dedup", F.array(F.lit("MISSING_ID"))),
-        _rejected(bad, id_path, "normalize", F.col("rejected_fields"), "field_issues"),
+        _rejected(missing, source.id_field, "dedup", F.array(F.lit("MISSING_ID"))),
+        _rejected(bad, source.id_field, "normalize", F.col("rejected_fields"), "field_issues"),
     ]
     return kept, rejected
 
@@ -174,19 +165,16 @@ def _normalize_examples(questions: DataFrame) -> dict[str, list[dict[str, Any]]]
 
 
 def run(cfg: CleanConfig, spark: SparkSession) -> dict[str, Any]:
-    contracts = load_contracts()
     stats = CleaningStats()
-    tables = contracts.tables
 
-    synonyms = load_synonyms(spark, cfg, contracts)
+    synonyms = load_synonyms(spark, cfg)
     stats.extra["tag_synonyms_loaded"] = len(synonyms)
-    context = NormalizationContext(tag_synonyms=synonyms)
 
     kept: dict[str, DataFrame] = {}
     rejected: dict[str, list[DataFrame]] = {}
-    for entity in ENTITIES:
+    for entity, source in (("question", QUESTION), ("answer", ANSWER), ("comment", COMMENT)):
         log.info("cleaning %s", entity)
-        kept[entity], rejected[entity] = clean_entity(spark, cfg, contracts, entity, context, stats)
+        kept[entity], rejected[entity] = clean_entity(spark, cfg, entity, source, synonyms, stats)
     questions, answers, comments = kept["question"], kept["answer"], kept["comment"]
     stats.extra["examples"] = _normalize_examples(questions)
 
@@ -212,7 +200,7 @@ def run(cfg: CleanConfig, spark: SparkSession) -> dict[str, Any]:
             "post_type",
             F.when(F.col("endpoint") == "question_comments", "question").otherwise("answer"),
         ),
-        tables["leaky_comments"],
+        cfg.leak_patterns,
     ).persist(CACHE)
     leaky = comments.filter(F.size("leak_patterns") > 0)
     n_comments = comments.count()
@@ -271,17 +259,13 @@ def run(cfg: CleanConfig, spark: SparkSession) -> dict[str, Any]:
         .groupBy(F.col("post_id").alias("question_id"))
         .agg(F.count("*").cast("int").alias("comment_count"))
     )
-    dup_policy = tables["duplicates"]
-    dup_reasons = list(dup_policy["closed_reasons"])
-    if dup_policy["include_optional_closed_reasons"]:
-        dup_reasons += dup_policy["optional_closed_reasons"]
     questions = (
         questions.join(answer_counts, "question_id", "left")
         .join(comment_counts, "question_id", "left")
         .fillna(0, ["answer_count", "comment_count"])
         .withColumn(
             "is_closed_duplicate",
-            F.coalesce(F.col("closed_reason").isin(*dup_reasons), F.lit(False)),
+            F.coalesce(F.col("closed_reason").isin(*cfg.closed_reasons), F.lit(False)),
         )
         .persist(CACHE)
     )
@@ -313,9 +297,8 @@ def run(cfg: CleanConfig, spark: SparkSession) -> dict[str, Any]:
         .persist(CACHE)
     )
     n_candidates, n_not_self, n_pairs = candidates.count(), not_self.count(), pairs.count()
-    skipped_optional = questions.filter(
-        F.col("closed_reason").isin(*dup_policy["optional_closed_reasons"])
-        & ~F.col("is_closed_duplicate")
+    not_counted = questions.filter(
+        F.col("closed_reason").isin(*cfg.not_counted_closed_reasons)
     ).count()
     stats.step(
         "question",
@@ -323,15 +306,15 @@ def run(cfg: CleanConfig, spark: SparkSession) -> dict[str, Any]:
         n_candidates,
         n_pairs,
         {"SELF_PAIR": n_candidates - n_not_self, "ORIGINAL_NOT_IN_CLEAN": n_not_self - n_pairs},
-        note=f"closed_reason in {dup_reasons}; {skipped_optional} questions closed as "
-        f"{dup_policy['optional_closed_reasons']} were not used",
+        note=f"closed_reason in {cfg.closed_reasons}; {not_counted} questions closed as "
+        f"{cfg.not_counted_closed_reasons} were not used",
     )
 
     # Groups and split (small: done on the driver).
     pair_rows = [(r.duplicate_id, r.original_id) for r in pairs.collect()]
     group_of = connected_components(pair_rows)
     all_ids = [r.question_id for r in question_ids.collect()]
-    split_of = assign_splits(all_ids, group_of, tables["split"])
+    split_of = assign_splits(all_ids, group_of, cfg.split)
     groups = spark.createDataFrame(sorted(group_of.items()), "question_id BIGINT, group_id BIGINT")
     splits = spark.createDataFrame(sorted(split_of.items()), "question_id BIGINT, split STRING")
     sizes = sorted(_group_sizes(group_of).values(), reverse=True)
@@ -347,7 +330,7 @@ def run(cfg: CleanConfig, spark: SparkSession) -> dict[str, Any]:
             "questions": sum(1 for s in split_of.values() if s == name),
             "duplicate_queries": sum(1 for q in duplicate_ids if split_of.get(q) == name),
         }
-        for name in tables["split"]["ratios"]
+        for name in cfg.split["ratios"]
     }
 
     out = cfg.clean_dir

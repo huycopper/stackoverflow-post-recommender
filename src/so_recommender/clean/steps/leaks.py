@@ -7,24 +7,15 @@ comparison "content" vs "content + comments" would be unfair.
 
 from __future__ import annotations
 
-from typing import Any
-
 from pyspark.sql import DataFrame
 from pyspark.sql import functions as F
 
 
-def enabled_patterns(policy: dict[str, Any]) -> dict[str, str]:
-    return {name: p["regex"] for name, p in policy["patterns"].items() if p["enabled"]}
-
-
-def flag_leaks(comments: DataFrame, policy: dict[str, Any]) -> DataFrame:
-    """Add `leak_patterns`: names of the enabled patterns found in the comment."""
-    if policy["match_on"] != "raw_html":
-        raise ValueError("leaky_comments.match_on: only 'raw_html' is supported")
-    body = F.col("raw.body")
-    patterns = enabled_patterns(policy)
+def flag_leaks(comments: DataFrame, patterns: dict[str, str]) -> DataFrame:
+    """Add `leak_patterns`: names of the patterns found in the raw HTML of the comment."""
     if not patterns:
         return comments.withColumn("leak_patterns", F.expr("CAST(array() AS ARRAY<STRING>)"))
+    body = F.col("raw.body")
     return comments.withColumn(
         "leak_patterns",
         F.filter(

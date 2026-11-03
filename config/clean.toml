@@ -1,12 +1,10 @@
 # Settings for `python -m so_recommender.clean`. Paths are relative to the repo root.
-# Cleaning rules (field types, thresholds, leak patterns, split) live in
-# src/so_recommender/clean/contracts/*.json; this file only says where and how to run.
+# Which raw field becomes which clean field, and its data type, is in clean/fields.py.
 
 [paths]
 raw_dir = "data/raw"
 clean_dir = "data/clean"
 stats_file = "reports/cleaning_stats.json"
-# `export`: model input built from data/clean (data contract 0.3, section 3)
 documents_file = "data/clean/documents.json"
 qrels_file = "data/clean/qrels.json"
 export_stats_file = "reports/export_stats.json"
@@ -16,3 +14,37 @@ export_stats_file = "reports/export_stats.json"
 master = "local[6]"
 driver_memory = "4g"
 shuffle_partitions = 16
+
+# Comments matching any of these are dropped: they give away the duplicate link.
+# Java regexes, matched on the raw HTML of the comment.
+[leaky_comments]
+"possible duplicate" = "(?i)possible duplicate"
+"does this answer your question" = "(?i)does this answer your question"
+"already has an answer" = "(?i)already ha(s|ve) an? answers?"
+"duplicate of" = "(?i)duplicate of"
+# Off for now: also catches ordinary comments that just link to another question.
+# "link to another question" = '(?i)stackoverflow\.com/(questions|q)/\d+'
+
+[duplicates]
+# Questions closed for these reasons become labelled queries.
+closed_reasons = ["Duplicate"]
+# Old name of the same thing (closed around 2013). Move it up to count its 158 pairs.
+not_counted_closed_reasons = ["exact duplicate"]
+
+# A whole duplicate group goes to one split.
+[split]
+seed = 42
+# Bigger groups all go to large_group_split: one group of ~8,000 questions in the test set
+# would make most test queries ask about the same thing.
+large_group_size = 200
+large_group_split = "train"
+
+[split.ratios]
+train = 0.8
+val = 0.1
+test = 0.1
+
+[export]
+# In bigger groups a query's right answers are only the originals it was closed against,
+# not the whole group (which would list thousands of ids).
+group_relevance_max_size = 200

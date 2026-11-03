@@ -15,10 +15,9 @@ import json
 import logging
 import sys
 
-from .config import load_config
+from .config import build_session, load_config
 from .export import export
 from .pipeline import run
-from .session import build_session
 
 
 def main(argv: list[str] | None = None) -> int:
