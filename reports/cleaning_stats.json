@@ -1,7 +1,7 @@
 {
-  "started_at": "2026-11-03T11:12:15+00:00",
-  "finished_at": "2026-11-03T11:14:47+00:00",
-  "seconds": 152.3,
+  "started_at": "2026-11-05T10:30:01+00:00",
+  "finished_at": "2026-11-05T10:32:21+00:00",
+  "seconds": 139.4,
   "steps": [
     {
       "entity": "question",
@@ -127,18 +127,6 @@
       "reasons": {
         "POST_NOT_IN_CLEAN": 0
       }
-    },
-    {
-      "entity": "question",
-      "step": "duplicate_pairs",
-      "rows_in": 23470,
-      "rows_out": 23467,
-      "rows_removed": 3,
-      "reasons": {
-        "ORIGINAL_NOT_IN_CLEAN": 3,
-        "SELF_PAIR": 0
-      },
-      "note": "closed_reason in ['Duplicate']; 138 questions closed as ['exact duplicate'] were not used"
     }
   ],
   "field_issues": {
@@ -262,50 +250,9 @@
     "api_less_than_kept": 4,
     "note": "kept = question comments after leak and orphan filters"
   },
-  "groups": {
-    "groups": 4806,
-    "questions_in_groups": 27283,
-    "largest_sizes": [
-      8042,
-      162,
-      129,
-      84,
-      81,
-      76,
-      74,
-      71,
-      69,
-      68
-    ],
-    "size_distribution": {
-      "2": 2624,
-      "3": 833,
-      "4-5": 657,
-      "6-10": 463,
-      "11-50": 210,
-      "51-200": 18,
-      ">200": 1
-    }
-  },
-  "split": {
-    "train": {
-      "questions": 76828,
-      "duplicate_queries": 17645
-    },
-    "val": {
-      "questions": 8373,
-      "duplicate_queries": 1170
-    },
-    "test": {
-      "questions": 8503,
-      "duplicate_queries": 1286
-    }
-  },
   "outputs": {
     "questions": 93704,
     "answers": 257960,
-    "comments": 632388,
-    "duplicate_pairs": 23467,
-    "duplicate_groups": 4806
+    "comments": 632388
   }
 }

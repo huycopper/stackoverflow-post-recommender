@@ -12,16 +12,13 @@
     "creation_date": "time",
     "is_closed_duplicate": "categorical, binary",
     "closed_reason": "categorical",
-    "split": "categorical",
-    "role (duplicate / original / other)": "categorical, derived from duplicate_pairs"
+    "role (duplicate / other)": "categorical, derived from is_closed_duplicate"
   },
   "overview": {
     "questions": 93704,
     "answers": 257960,
     "comments": 632388,
     "comments_on_questions": 240116,
-    "duplicate_pairs": 23467,
-    "duplicate_groups": 4806,
     "created_from": "2008-08-02",
     "created_to": "2026-10-24"
   },
@@ -213,14 +210,8 @@
   },
   "categorical": {
     "role": {
-      "other": 66421,
-      "duplicate": 20101,
-      "original": 7182
-    },
-    "split": {
-      "train": 76828,
-      "test": 8503,
-      "val": 8373
+      "other": 73601,
+      "duplicate": 20103
     },
     "closed_reason": {
       "(open)": 71946,
@@ -272,28 +263,20 @@
   },
   "by_role": {
     "duplicate": {
-      "questions": 20101,
+      "questions": 20103,
       "no_comments": 0.248,
       "no_answers": 0.255,
       "has_code": 0.845,
       "median_comment_count": 2.0,
       "median_body_words": 62.0
     },
-    "original": {
-      "questions": 7182,
-      "no_comments": 0.35,
-      "no_answers": 0.0,
-      "has_code": 0.758,
-      "median_comment_count": 1.0,
-      "median_body_words": 61.0
-    },
     "other": {
-      "questions": 66421,
-      "no_comments": 0.267,
-      "no_answers": 0.107,
-      "has_code": 0.82,
+      "questions": 73601,
+      "no_comments": 0.275,
+      "no_answers": 0.097,
+      "has_code": 0.814,
       "median_comment_count": 2.0,
-      "median_body_words": 81.0
+      "median_body_words": 79.0
     }
   },
   "spearman_correlation": {
@@ -376,83 +359,6 @@
       "body_words": 0.186,
       "code_blocks": 0.063,
       "n_tags": 1.0
-    }
-  },
-  "group_sizes": {
-    "distribution": {
-      "2": 2624,
-      "3": 833,
-      "4-5": 657,
-      "6-10": 463,
-      "11-50": 210,
-      "51-200": 18,
-      ">200": 1
-    },
-    "largest": [
-      8042,
-      162,
-      129,
-      84,
-      81,
-      76,
-      74,
-      71,
-      69,
-      68
-    ],
-    "originals_per_duplicate": {
-      "count": 20101,
-      "mean": 1.167,
-      "median": 1.0,
-      "mode": 1.0,
-      "std": 0.464,
-      "variance": 0.215,
-      "min": 1.0,
-      "q1": 1.0,
-      "q3": 1.0,
-      "p99": 3.0,
-      "max": 5.0,
-      "skewness": 3.343,
-      "kurtosis": 13.646
-    }
-  },
-  "cosine_similarity": {
-    "C duplicate pairs": {
-      "mean": 0.176,
-      "median": 0.1521,
-      "p10": 0.0316,
-      "p90": 0.3498
-    },
-    "C random pairs": {
-      "mean": 0.0199,
-      "median": 0.012,
-      "p10": 0.0,
-      "p90": 0.0495
-    },
-    "C+Cm duplicate pairs": {
-      "mean": 0.1747,
-      "median": 0.1587,
-      "p10": 0.0533,
-      "p90": 0.3148
-    },
-    "C+Cm random pairs": {
-      "mean": 0.0243,
-      "median": 0.0182,
-      "p10": 0.0,
-      "p90": 0.0535
-    },
-    "comments_effect_on_duplicate_pairs": {
-      "pairs": 23467,
-      "pairs_where_query_has_comments": 17844,
-      "mean_gain_all": -0.0013,
-      "mean_gain_query_has_comments": 0.0022,
-      "share_higher_with_comments": 0.471,
-      "share_lower_with_comments": 0.521
-    },
-    "separation": {
-      "random_p95_C": 0.0681,
-      "duplicate_pairs_above_it_C": 0.788,
-      "duplicate_pairs_above_it_CCm": 0.852
     }
   },
   "kmeans": {
@@ -593,9 +499,7 @@
     "fig05_score_vs_views.png",
     "fig06_scatter_matrix.png",
     "fig07_correlation.png",
-    "fig08_group_sizes.png",
-    "fig09_similarity.png",
-    "fig10_svd_by_tag.png",
-    "fig11_kmeans_elbow.png"
+    "fig08_svd_by_tag.png",
+    "fig09_kmeans_elbow.png"
   ]
 }

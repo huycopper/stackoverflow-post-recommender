@@ -1,7 +1,7 @@
 """Command line entry point.
 
 python -m so_recommender.clean            # raw -> data/clean (uses config/clean.toml)
-python -m so_recommender.clean export     # data/clean -> documents.json + qrels.json
+python -m so_recommender.clean export     # data/clean -> documents.json + documents.parquet
 python -m so_recommender.clean all        # both
 python -m so_recommender.clean --config config/clean.toml run
 

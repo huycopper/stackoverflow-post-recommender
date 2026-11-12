@@ -1,8 +1,9 @@
 """Raw API responses -> clean Parquet tables, rejected rows and cleaning statistics.
 
 Order: tag synonyms -> per entity (load, dedup, normalize) -> answers whose question is gone ->
-leaky comments -> comments whose post is gone -> recount answers/comments -> duplicate pairs ->
-duplicate groups -> train/val/test split -> write everything.
+leaky comments -> comments whose post is gone -> recount answers/comments -> write everything.
+
+This stage only cleans: no duplicate mapping and no train/val/test split (decisions.md, D13).
 """
 
 from __future__ import annotations
@@ -19,7 +20,6 @@ from .config import CleanConfig
 from .fields import ANSWER, COMMENT, QUESTION, TAG_SYNONYM
 from .normalize import REJECTED, normalize_entity
 from .stats import CleaningStats, count_by, examples
-from .steps.groups import assign_splits, connected_components
 from .steps.leaks import flag_leaks
 from .steps.load import keep_latest, load_items
 
@@ -279,68 +279,11 @@ def run(cfg: CleanConfig, spark: SparkSession) -> dict[str, Any]:
         "note": "kept = question comments after leak and orphan filters",
     }
 
-    # Duplicate pairs: (closed question -> each original it lists).
-    candidates = (
-        questions.filter("is_closed_duplicate")
-        .select(
-            F.col("question_id").alias("duplicate_id"),
-            F.explode("raw.closed_details.original_questions.question_id").alias("original_id"),
-        )
-        .distinct()
-        .persist(CACHE)
-    )
-    not_self = candidates.filter(F.col("duplicate_id") != F.col("original_id"))
-    originals = question_ids.withColumnRenamed("question_id", "original_id")
-    pairs = (
-        not_self.join(originals, "original_id", "left_semi")
-        .select("duplicate_id", "original_id")
-        .persist(CACHE)
-    )
-    n_candidates, n_not_self, n_pairs = candidates.count(), not_self.count(), pairs.count()
-    not_counted = questions.filter(
-        F.col("closed_reason").isin(*cfg.not_counted_closed_reasons)
-    ).count()
-    stats.step(
-        "question",
-        "duplicate_pairs",
-        n_candidates,
-        n_pairs,
-        {"SELF_PAIR": n_candidates - n_not_self, "ORIGINAL_NOT_IN_CLEAN": n_not_self - n_pairs},
-        note=f"closed_reason in {cfg.closed_reasons}; {not_counted} questions closed as "
-        f"{cfg.not_counted_closed_reasons} were not used",
-    )
-
-    # Groups and split (small: done on the driver).
-    pair_rows = [(r.duplicate_id, r.original_id) for r in pairs.collect()]
-    group_of = connected_components(pair_rows)
-    all_ids = [r.question_id for r in question_ids.collect()]
-    split_of = assign_splits(all_ids, group_of, cfg.split)
-    groups = spark.createDataFrame(sorted(group_of.items()), "question_id BIGINT, group_id BIGINT")
-    splits = spark.createDataFrame(sorted(split_of.items()), "question_id BIGINT, split STRING")
-    sizes = sorted(_group_sizes(group_of).values(), reverse=True)
-    duplicate_ids = {d for d, _ in pair_rows}
-    stats.extra["groups"] = {
-        "groups": len(sizes),
-        "questions_in_groups": len(group_of),
-        "largest_sizes": sizes[:10],
-        "size_distribution": _size_bins(sizes),
-    }
-    stats.extra["split"] = {
-        name: {
-            "questions": sum(1 for s in split_of.values() if s == name),
-            "duplicate_queries": sum(1 for q in duplicate_ids if split_of.get(q) == name),
-        }
-        for name in cfg.split["ratios"]
-    }
-
     out = cfg.clean_dir
     log.info("writing %s", out)
     _write(questions.select(*QUESTION_COLUMNS), out / "questions.parquet")
     _write(answers.select(*ANSWER_COLUMNS), out / "answers.parquet")
     _write(comments.select(*COMMENT_COLUMNS), out / "comments.parquet")
-    _write(pairs, out / "duplicate_pairs.parquet")
-    _write(groups, out / "duplicate_groups.parquet")
-    _write(splits, out / "splits.parquet")
     for entity, frames in rejected.items():
         merged = frames[0]
         for frame in frames[1:]:
@@ -351,36 +294,5 @@ def run(cfg: CleanConfig, spark: SparkSession) -> dict[str, Any]:
         "questions": questions.count(),
         "answers": answers.count(),
         "comments": comments.count(),
-        "duplicate_pairs": n_pairs,
-        "duplicate_groups": len(sizes),
     }
     return stats.write(cfg.stats_file)
-
-
-def _group_sizes(group_of: dict[int, int]) -> dict[int, int]:
-    sizes: dict[int, int] = {}
-    for group in group_of.values():
-        sizes[group] = sizes.get(group, 0) + 1
-    return sizes
-
-
-def _size_bins(sizes: list[int]) -> dict[str, int]:
-    bins = {"2": 0, "3": 0, "4-5": 0, "6-10": 0, "11-50": 0, "51-200": 0, ">200": 0}
-    for s in sizes:
-        key = (
-            "2"
-            if s == 2
-            else "3"
-            if s == 3
-            else "4-5"
-            if s <= 5
-            else "6-10"
-            if s <= 10
-            else "11-50"
-            if s <= 50
-            else "51-200"
-            if s <= 200
-            else ">200"
-        )
-        bins[key] += 1
-    return bins

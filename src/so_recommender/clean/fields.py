@@ -19,8 +19,7 @@ QUESTION = {
         "question_id BIGINT, title STRING, body STRING, tags ARRAY<STRING>, score BIGINT, "
         "view_count BIGINT, answer_count BIGINT, comment_count BIGINT, creation_date BIGINT, "
         "closed_date BIGINT, closed_reason STRING, link STRING, "
-        "owner STRUCT<user_type: STRING>, "
-        "closed_details STRUCT<original_questions: ARRAY<STRUCT<question_id: BIGINT>>>"
+        "owner STRUCT<user_type: STRING>"
     ),
     "fields": [
         ("question_id", "question_id", "id", True),

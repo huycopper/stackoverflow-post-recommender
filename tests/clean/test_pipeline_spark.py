@@ -23,7 +23,7 @@ pytestmark = pytest.mark.skipif(
 )
 
 from so_recommender.clean.config import build_session, load_config  # noqa: E402
-from so_recommender.clean.export import build_qrels, export  # noqa: E402
+from so_recommender.clean.export import export  # noqa: E402
 from so_recommender.clean.normalize import STACK_OVERFLOW_START, normalize_tags  # noqa: E402
 from so_recommender.clean.pipeline import run  # noqa: E402
 from so_recommender.collect.raw_store import RawStore  # noqa: E402
@@ -107,7 +107,7 @@ def cleaned(spark, tmp_path_factory):
                 q(2, comment_count=2) | dup(1),  # closed a day later: latest copy wins
                 q(3) | dup(1, reason="exact duplicate"),  # optional reason, off by default
                 q(4, title=""),  # rejected: empty title
-                q(5) | dup(999),  # original never fetched
+                q(5) | dup(999),  # kept even though its original was never fetched
             ]
         },
     )
@@ -161,7 +161,7 @@ def cleaned(spark, tmp_path_factory):
         clean_dir=tmp / "clean",
         stats_file=tmp / "reports" / "stats.json",
         documents_file=tmp / "clean" / "documents.json",
-        qrels_file=tmp / "clean" / "qrels.json",
+        documents_parquet_file=tmp / "clean" / "documents.parquet",
         export_stats_file=tmp / "reports" / "export.json",
     )
     report = run(cfg, spark)
@@ -200,16 +200,11 @@ def test_comments_lose_leaks_and_orphans_and_get_their_question(cleaned):
     assert rejected[502]["reasons"] == ["POST_NOT_IN_CLEAN"]
 
 
-def test_pairs_groups_and_splits(cleaned):
-    spark, cfg, report = cleaned
-    pairs = spark.read.parquet(str(cfg.clean_dir / "duplicate_pairs.parquet")).collect()
-    assert [(r.duplicate_id, r.original_id) for r in pairs] == [(2, 1)]
-    groups = _rows(spark, cfg.clean_dir / "duplicate_groups.parquet", "question_id")
-    assert {k: v["group_id"] for k, v in groups.items()} == {1: 1, 2: 1}
-    splits = _rows(spark, cfg.clean_dir / "splits.parquet", "question_id")
-    assert set(splits) == {1, 2, 3, 5} and splits[1]["split"] == splits[2]["split"]
-    step = next(s for s in report["steps"] if s["step"] == "duplicate_pairs")
-    assert step["reasons"]["ORIGINAL_NOT_IN_CLEAN"] == 1
+def test_cleaning_writes_no_duplicate_mapping_or_split(cleaned):
+    _, cfg, report = cleaned
+    for name in ("duplicate_pairs", "duplicate_groups", "splits"):
+        assert not (cfg.clean_dir / f"{name}.parquet").exists()
+    assert "duplicate_pairs" not in {s["step"] for s in report["steps"]}
 
 
 def test_rejections_and_stats_are_recorded(cleaned):
@@ -225,7 +220,7 @@ def test_rejections_and_stats_are_recorded(cleaned):
     assert saved["field_issues"]["question"]["tags"]["TAG_SYNONYM_REPLACED"] == 1
 
 
-def test_documents_and_qrels_follow_the_model_format(cleaned):
+def test_documents_follow_the_model_format(cleaned):
     _, cfg, _ = cleaned
     docs = {d["question_id"]: d for d in json.loads(cfg.documents_file.read_text("utf-8"))}
     assert set(docs) == {1, 2, 3, 5}
@@ -235,32 +230,14 @@ def test_documents_and_qrels_follow_the_model_format(cleaned):
         "body": "How to merge?",
         "comments": [],  # the only comment is on an answer
         "tags": ["python", "python-3.x"],
-        "split": docs[1]["split"],
     }
     assert docs[2]["comments"] == ["Which Python version?"]  # the leaky one is gone
-    qrels = json.loads(cfg.qrels_file.read_text("utf-8"))
-    assert qrels == [
-        {"query_id": 2, "relevant_ids": [1], "relevance": "group", "split": docs[2]["split"]}
-    ]
 
 
-def test_qrels_use_direct_originals_in_huge_groups():
-    pairs = [(2, 1), (3, 1), (4, 3)]
-    groups = {1: 1, 2: 1, 3: 1, 4: 1}
-    splits = dict.fromkeys(groups, "train")
-    small = build_qrels(pairs, groups, splits, group_relevance_max_size=10)
-    assert small[0] == {
-        "query_id": 2,
-        "relevant_ids": [1, 3, 4],
-        "relevance": "group",
-        "split": "train",
-    }
-    big = build_qrels(pairs, groups, splits, group_relevance_max_size=3)
-    assert [(q["query_id"], q["relevant_ids"], q["relevance"]) for q in big] == [
-        (2, [1], "originals"),
-        (3, [1], "originals"),
-        (4, [3], "originals"),
-    ]
+def test_documents_parquet_holds_the_same_rows_as_the_json(cleaned):
+    spark, cfg, _ = cleaned
+    docs = {d["question_id"]: d for d in json.loads(cfg.documents_file.read_text("utf-8"))}
+    assert _rows(spark, cfg.documents_parquet_file, "question_id") == docs
 
 
 def test_config_rules_and_tags_normalize():

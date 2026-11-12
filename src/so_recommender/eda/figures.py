@@ -11,7 +11,7 @@ from pandas.plotting import scatter_matrix as pd_scatter_matrix
 
 from .style import DIVERGING, INK_2, MUTED, OTHER, SERIES, save
 
-ROLE_LABELS = {"duplicate": "câu trùng (query)", "original": "câu gốc", "other": "câu khác"}
+ROLE_LABELS = {"duplicate": "câu bị đóng vì trùng", "other": "câu khác"}
 
 
 def monthly_counts(q: pd.DataFrame, path: Path) -> str:
@@ -22,7 +22,7 @@ def monthly_counts(q: pd.DataFrame, path: Path) -> str:
     fig, ax = plt.subplots(figsize=(10, 3.6))
     x = all_q.index.to_timestamp()
     ax.plot(x, all_q.values, color=SERIES[0], label="tất cả câu hỏi")
-    ax.plot(x, dup.values, color=SERIES[1], label="câu trùng (query)")
+    ax.plot(x, dup.values, color=SERIES[1], label=ROLE_LABELS["duplicate"])
     ax.set_title("Số câu hỏi theo tháng đăng")
     ax.set_ylabel("câu hỏi / tháng")
     ax.legend(loc="upper left")
@@ -80,7 +80,7 @@ def histograms(q: pd.DataFrame, c: pd.DataFrame, path: Path) -> str:
 
 
 def box_by_role(q: pd.DataFrame, roles: list[str], path: Path) -> str:
-    """Does the role (duplicate / original / other) change the distribution?"""
+    """Does the role (duplicate / other) change the distribution?"""
     fig, axes = plt.subplots(1, 3, figsize=(12, 4))
     for ax, col, label in zip(
         axes,
@@ -119,8 +119,8 @@ def box_by_role(q: pd.DataFrame, roles: list[str], path: Path) -> str:
 
 def scatter_score_views(qs: pd.DataFrame, roles: list[str], path: Path) -> str:
     fig, ax = plt.subplots(figsize=(7.5, 5.5))
-    colors = dict(zip(roles, [SERIES[1], SERIES[0], OTHER], strict=True))
-    # Grey "other" first so the coloured roles are drawn on top of it.
+    colors = dict(zip(roles, [SERIES[1], OTHER], strict=True))
+    # Grey "other" first so the coloured role is drawn on top of it.
     for role in sorted(roles, key=lambda r: r != "other"):
         color = colors[role]
         part = qs[qs["role"] == role]
@@ -182,52 +182,6 @@ def correlation_heatmap(corr: pd.DataFrame, path: Path) -> str:
             )
     fig.colorbar(im, ax=ax, shrink=0.8)
     ax.set_title("Tương quan Spearman giữa các biến số")
-    return save(fig, path)
-
-
-def bar_counts(counts: dict, xlabel: str, ylabel: str, path: Path) -> str:
-    fig, ax = plt.subplots(figsize=(7, 3.8))
-    labels, values = list(map(str, counts)), list(counts.values())
-    ax.bar(labels, values, color=SERIES[0], width=0.7)
-    ax.set_yscale("log")
-    for x, v in enumerate(values):
-        ax.text(x, v, f"{v:,}", ha="center", va="bottom", fontsize=8, color=INK_2)
-    ax.grid(axis="x", visible=False)
-    ax.set_xlabel(xlabel)
-    ax.set_ylabel(f"{ylabel} (log)")
-    ax.set_title("Kích thước nhóm trùng")
-    return save(fig, path)
-
-
-def similarity_histograms(values: dict[str, np.ndarray], path: Path) -> str:
-    bins = np.linspace(0, 1, 51)
-    fig, axes = plt.subplots(1, 2, figsize=(12, 4), sharey=True)
-    panels = [
-        (
-            "Chỉ nội dung (C): cặp trùng và cặp ngẫu nhiên",
-            [("C duplicate pairs", "cặp trùng"), ("C random pairs", "cặp ngẫu nhiên")],
-        ),
-        (
-            "Cặp trùng: C và C+Cm (thêm comment)",
-            [("C duplicate pairs", "C"), ("C+Cm duplicate pairs", "C+Cm")],
-        ),
-    ]
-    for ax, (title, series) in zip(axes, panels, strict=True):
-        for (key, label), color in zip(series, SERIES[:2], strict=True):
-            ax.hist(
-                values[key],
-                bins=bins,
-                histtype="step",
-                linewidth=2,
-                color=color,
-                label=f"{label} (trung vị {np.median(values[key]):.2f})",
-            )
-        ax.set_title(title, fontsize=10)
-        ax.set_xlabel("cosine similarity (TF-IDF)")
-        ax.legend()
-    axes[0].set_ylabel("số cặp")
-    fig.suptitle("Độ giống nhau về từ vựng", fontweight="bold")
-    fig.tight_layout()
     return save(fig, path)
 
 

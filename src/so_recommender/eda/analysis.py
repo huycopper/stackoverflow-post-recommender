@@ -1,7 +1,7 @@
 """Run the EDA on data/clean and write figures + summary.json.
 
 Sections follow lecture L4: (1) variable types, (2) one variable at a time, (3) relationships,
-(4) groups and structure (duplicate groups, cosine similarity, SVD, k-means).
+(4) structure in the text (SVD, k-means).
 """
 
 from __future__ import annotations
@@ -16,7 +16,6 @@ import pandas as pd
 
 from . import style
 from .figures import (
-    bar_counts,
     box_by_role,
     correlation_heatmap,
     elbow,
@@ -24,16 +23,15 @@ from .figures import (
     monthly_counts,
     scatter_matrix,
     scatter_score_views,
-    similarity_histograms,
     svd_scatter,
     top_tags,
 )
 from .summary import describe_frame, word_count
-from .text import pair_cosine, random_pairs, similarity_summary, svd_kmeans, tfidf
+from .text import svd_kmeans, tfidf
 
 log = logging.getLogger(__name__)
 
-ROLES = ["duplicate", "original", "other"]
+ROLES = ["duplicate", "other"]
 NUMERIC = [
     "score",
     "view_count",
@@ -58,8 +56,7 @@ VARIABLE_TYPES = {
     "creation_date": "time",
     "is_closed_duplicate": "categorical, binary",
     "closed_reason": "categorical",
-    "split": "categorical",
-    "role (duplicate / original / other)": "categorical, derived from duplicate_pairs",
+    "role (duplicate / other)": "categorical, derived from is_closed_duplicate",
 }
 
 
@@ -69,14 +66,7 @@ def _read(clean: Path, name: str, columns: list[str] | None = None) -> pd.DataFr
 
 def load(clean: Path) -> dict[str, pd.DataFrame]:
     q = _read(clean, "questions")
-    pairs = _read(clean, "duplicate_pairs")
-    q = q.merge(_read(clean, "splits"), on="question_id", how="left")
-    duplicates, originals = set(pairs["duplicate_id"]), set(pairs["original_id"])
-    q["role"] = np.where(
-        q["question_id"].isin(duplicates),
-        "duplicate",
-        np.where(q["question_id"].isin(originals), "original", "other"),
-    )
+    q["role"] = np.where(q["is_closed_duplicate"], "duplicate", "other")
     q["title_chars"] = q["title"].str.len()
     q["body_words"] = q["body_text"].map(word_count)
     q["code_blocks"] = q["body_code"].map(len)
@@ -85,13 +75,7 @@ def load(clean: Path) -> dict[str, pd.DataFrame]:
     a["body_words"] = a["body_text"].map(word_count)
     c = _read(clean, "comments", ["comment_id", "post_type", "question_id", "text", "score"])
     c["words"] = c["text"].map(word_count)
-    return {
-        "questions": q,
-        "answers": a,
-        "comments": c,
-        "pairs": pairs,
-        "groups": _read(clean, "duplicate_groups"),
-    }
+    return {"questions": q, "answers": a, "comments": c}
 
 
 def _shares(q: pd.DataFrame) -> dict[str, Any]:
@@ -109,56 +93,6 @@ def _shares(q: pd.DataFrame) -> dict[str, Any]:
     return out
 
 
-def text_similarity(data: dict[str, pd.DataFrame], seed: int) -> tuple[dict, dict[str, Any]]:
-    """Cosine similarity of duplicate pairs vs random pairs, for C and C+Cm."""
-    q, c = data["questions"], data["comments"]
-    qc = c[c["post_type"] == "question"].groupby("question_id")["text"].agg(lambda t: "\n".join(t))
-    content = q["title"] + "\n" + q["body_text"]
-    with_comments = content + "\n" + q["question_id"].map(qc).fillna("")
-    row_of = {qid: i for i, qid in enumerate(q["question_id"])}
-    group_of = dict(zip(data["groups"]["question_id"], data["groups"]["group_id"], strict=True))
-    pairs = list(zip(data["pairs"]["duplicate_id"], data["pairs"]["original_id"], strict=True))
-    rand = random_pairs(list(row_of), group_of, len(pairs), seed)
-    has_comment = q.set_index("question_id")["comment_count"].to_dict()
-
-    values: dict[str, np.ndarray] = {}
-    summary: dict[str, Any] = {}
-    for name, texts in (("C", content), ("C+Cm", with_comments)):
-        log.info("TF-IDF %s", name)
-        matrix, _ = tfidf(texts)
-        values[f"{name} duplicate pairs"] = pair_cosine(matrix, row_of, pairs)
-        values[f"{name} random pairs"] = pair_cosine(matrix, row_of, rand)
-    for key, v in values.items():
-        summary[key] = similarity_summary(v)
-
-    gain = values["C+Cm duplicate pairs"] - values["C duplicate pairs"]
-    commented = np.array([has_comment.get(d, 0) > 0 for d, _ in pairs])
-    threshold = np.quantile(values["C random pairs"], 0.95)
-    summary["comments_effect_on_duplicate_pairs"] = {
-        "pairs": len(pairs),
-        "pairs_where_query_has_comments": int(commented.sum()),
-        "mean_gain_all": round(float(gain.mean()), 4),
-        "mean_gain_query_has_comments": round(float(gain[commented].mean()), 4),
-        "share_higher_with_comments": round(float((gain > 1e-9).mean()), 3),
-        "share_lower_with_comments": round(float((gain < -1e-9).mean()), 3),
-    }
-    summary["separation"] = {
-        "random_p95_C": round(float(threshold), 4),
-        "duplicate_pairs_above_it_C": round(
-            float((values["C duplicate pairs"] > threshold).mean()), 3
-        ),
-        "duplicate_pairs_above_it_CCm": round(
-            float(
-                (
-                    values["C+Cm duplicate pairs"] > np.quantile(values["C+Cm random pairs"], 0.95)
-                ).mean()
-            ),
-            3,
-        ),
-    }
-    return values, summary
-
-
 def run_eda(clean: str | Path, out: str | Path, seed: int = 42, sample: int = 20_000) -> dict:
     clean, out = Path(clean), Path(out)
     figures = out / "figures"
@@ -174,8 +108,6 @@ def run_eda(clean: str | Path, out: str | Path, seed: int = 42, sample: int = 20
         "answers": len(a),
         "comments": len(c),
         "comments_on_questions": int((c["post_type"] == "question").sum()),
-        "duplicate_pairs": len(data["pairs"]),
-        "duplicate_groups": int(data["groups"]["group_id"].nunique()),
         "created_from": str(q["creation_date"].min().date()),
         "created_to": str(q["creation_date"].max().date()),
     }
@@ -184,7 +116,6 @@ def run_eda(clean: str | Path, out: str | Path, seed: int = 42, sample: int = 20
     report["comments_numeric"] = describe_frame(c, ["score", "words"])
     report["categorical"] = {
         "role": q["role"].value_counts().to_dict(),
-        "split": q["split"].value_counts().to_dict(),
         "closed_reason": q["closed_reason"].fillna("(open)").value_counts().to_dict(),
         "is_accepted_answer_share": round(float(a["is_accepted"].mean()), 3),
         "top_tags": q["tags"].explode().value_counts().head(30).to_dict(),
@@ -213,37 +144,12 @@ def run_eda(clean: str | Path, out: str | Path, seed: int = 42, sample: int = 20
     report["spearman_correlation"] = corr.to_dict()
     figs.append(correlation_heatmap(corr, figures / "fig07_correlation.png"))
 
-    # 4. Groups and structure.
-    sizes = data["groups"].groupby("group_id").size()
-    bins = pd.cut(
-        sizes,
-        [1, 2, 3, 5, 10, 50, 200, np.inf],
-        labels=["2", "3", "4-5", "6-10", "11-50", "51-200", ">200"],
-    )
-    report["group_sizes"] = {
-        "distribution": bins.value_counts().sort_index().to_dict(),
-        "largest": sizes.sort_values(ascending=False).head(10).tolist(),
-        "originals_per_duplicate": describe_frame(
-            data["pairs"].groupby("duplicate_id").size().to_frame("n"), ["n"]
-        )["n"],
-    }
-    figs.append(
-        bar_counts(
-            report["group_sizes"]["distribution"],
-            "số câu hỏi trong nhóm",
-            "số nhóm",
-            figures / "fig08_group_sizes.png",
-        )
-    )
-
-    values, report["cosine_similarity"] = text_similarity(data, seed)
-    figs.append(similarity_histograms(values, figures / "fig09_similarity.png"))
-
+    # 4. Structure in the text.
     log.info("SVD and k-means on %d questions", len(qs))
     matrix, vectorizer = tfidf(qs["title"] + "\n" + qs["body_text"])
     two_d, _, report["kmeans"] = svd_kmeans(matrix, vectorizer, range(2, 13), 8, seed)
-    figs.append(svd_scatter(qs, two_d, figures / "fig10_svd_by_tag.png"))
-    figs.append(elbow(report["kmeans"]["inertia_by_k"], figures / "fig11_kmeans_elbow.png"))
+    figs.append(svd_scatter(qs, two_d, figures / "fig08_svd_by_tag.png"))
+    figs.append(elbow(report["kmeans"]["inertia_by_k"], figures / "fig09_kmeans_elbow.png"))
 
     report["figures"] = figs
     out.mkdir(parents=True, exist_ok=True)
