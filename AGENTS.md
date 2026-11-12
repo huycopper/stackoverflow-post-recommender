@@ -7,7 +7,6 @@ File này dành cho mọi AI coding agent (Claude Code, Codex, Cursor, Copilot�
 1. Đọc [docs/01_project_brief.md](docs/01_project_brief.md) và [docs/decisions.md](docs/decisions.md).
 2. Đọc thêm theo loại việc:
    - Thu thập, làm sạch, EDA: [03_data_source](docs/03_data_source.md), [04_data_contract](docs/04_data_contract.md), [05_cleaning_pipeline](docs/05_cleaning_pipeline.md)
-   - Model, đánh giá: [04_data_contract](docs/04_data_contract.md), [07_modeling_eval](docs/07_modeling_eval.md)
    - Cấu trúc code, thư viện: [06_architecture](docs/06_architecture.md)
 3. Nếu yêu cầu của người dùng mâu thuẫn với docs, hỏi lại trước khi làm.
 
@@ -19,7 +18,7 @@ File này dành cho mọi AI coding agent (Claude Code, Codex, Cursor, Copilot�
 - **Không commit dữ liệu hoặc secret:** không commit `data/`, `.env`, API key, file model lớn.
 - **Data contract là giao diện giữa các bên.** Muốn đổi tên, kiểu, ý nghĩa của trường trong [04_data_contract.md](docs/04_data_contract.md) thì phải tăng version, ghi changelog trong file đó và thêm một mục vào `decisions.md`.
 - **Mỗi bước làm sạch phải ghi lại số liệu** (số dòng vào, ra, bị loại, lý do). Báo cáo cần các số này ([02_course_requirements](docs/02_course_requirements.md)).
-- **Chia train/test theo nhóm bài trùng**, không chia theo từng câu hỏi lẻ, để tránh rò rỉ nhãn ([07_modeling_eval](docs/07_modeling_eval.md)).
+- **Phần việc ở đây chỉ gồm thu thập, làm sạch và EDA.** Không chia train/val/test, không tạo cặp trùng, không làm gì liên quan tới train model ([decisions.md](docs/decisions.md), D13).
 - **Dùng thư viện hoặc model có sẵn thì ghi vào mục "Thư viện sử dụng"** trong [06_architecture.md](docs/06_architecture.md). Môn học bắt buộc khai báo.
 
 ## Quy ước code

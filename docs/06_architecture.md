@@ -8,15 +8,12 @@ Stack Exchange API
       ▼
 data/raw/            JSONL.gz, response nguyên văn, chỉ ghi thêm
       │  ├─ explore flatten ─► data/flat/*.parquet (chưa sạch, để khám phá) ─► explore excel
-      │  clean + integrate (6 bước, xem 05)
+      │  clean + integrate (5 bước, xem 05)
       ▼
 data/clean/          Parquet theo data contract (04)
-      │  build documents + splits
+      │  build documents
       ▼
-documents.json + qrels.json ──► models (baseline, model chính) ──► evaluation (P/R/NDCG@K)
-                                                              │
-                                                              ▼
-                                                     results/, reports/
+documents.json, documents.parquet, reports/eda/
 ```
 
 ## Cấu trúc thư mục dự kiến
@@ -25,13 +22,11 @@ documents.json + qrels.json ──► models (baseline, model chính) ──► 
 .
 ├── AGENTS.md, CLAUDE.md, README.md
 ├── docs/                 # context dự án (thư mục này)
-├── config/               # *.toml: tag, đường dẫn, tham số API, tham số model
+├── config/               # *.toml: tag, đường dẫn, tham số API và làm sạch
 ├── src/so_recommender/
 │   ├── collect/          # gọi API, lưu raw          (ETL)
-│   ├── clean/            # 6 bước làm sạch, validate  (ETL)
-│   ├── features/         # ghép documents, split      (ETL ↔ model)
-│   ├── models/           # baseline, model chính      (model)
-│   └── evaluate/         # metric, chạy thí nghiệm    (model)
+│   ├── clean/            # 5 bước làm sạch, ghép documents (ETL)
+│   └── eda/              # phân tích khám phá         (ETL)
 ├── notebooks/            # EDA, phân tích kết quả
 ├── tests/                # pytest
 ├── data/                 # KHÔNG commit (raw/, clean/)

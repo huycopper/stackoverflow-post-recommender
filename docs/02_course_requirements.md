@@ -13,8 +13,8 @@ Nguồn: slide `L0-course-inf-en` (slide 6–9) và các câu trả lời của 
 | Tiêu chí | Cách dự án đáp ứng |
 |---|---|
 | Độ khó của bài toán | Bài toán xếp hạng, có thu thập, làm sạch, tích hợp dữ liệu và thí nghiệm so sánh |
-| Phương pháp phù hợp và có chất lượng | Có baseline và model mạnh hơn, xem [07](07_modeling_eval.md) |
-| Đánh giá thực nghiệm chặt chẽ | P/R/NDCG@K, chia dữ liệu theo nhóm trùng, ablation `C` so với `C+Cm` |
+| Phương pháp phù hợp và có chất lượng | Phần model do bên khác phụ trách |
+| Đánh giá thực nghiệm chặt chẽ | P/R/NDCG@K và ablation `C` so với `C+Cm` (bên model phụ trách) |
 | Chất lượng thuyết trình | 15 phút gồm slide và **demo** |
 | Chất lượng báo cáo viết | Xem mục "Sản phẩm nộp" bên dưới |
 | Khai báo thư viện, code có sẵn | **Bắt buộc** ghi trong báo cáo và slide. Danh sách nằm ở [06](06_architecture.md#thư-viện-sử-dụng) |

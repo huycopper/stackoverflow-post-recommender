@@ -60,6 +60,15 @@ Mỗi quyết định ghi: **ngày, quyết định, lý do, người chốt**. 
 - **Lý do:** Huy Copper đã làm xong phần thu thập và xuất dữ liệu. Nguyễn Huy nhận làm tiếp phần làm sạch.
 - **Người chốt:** Nguyễn Huy và Huy Copper.
 
+### D13. Chỉ làm sạch và EDA: bỏ ánh xạ câu trùng và việc chia tập (05/11/2026)
+- **Quyết định:** phần việc này dừng ở làm sạch và EDA. Pipeline không còn tạo `duplicate_pairs`, `duplicate_groups`, `splits`, `qrels.json` và trường `split`. Đầu ra là `questions`, `answers`, `comments`, `rejected/` và `documents` ở cả hai dạng `documents.json`, `documents.parquet`. Data contract lên 0.4 ([04](04_data_contract.md)). Thay thế phần "chia theo nhóm trùng" và file nhãn đề xuất trong D9.
+- **Lý do:** việc chia train/val/test và phần model do người khác phụ trách.
+- **Hệ quả:**
+  - Ánh xạ câu trùng tới câu gốc vẫn lấy lại được từ `closed_details.original_questions` trong `data/raw/` ([10](10_raw_data_metadata.md)). Code cũ nằm trong lịch sử git.
+  - Vẫn giữ bước lọc comment "Possible duplicate of…", cột `is_closed_duplicate` và `closed_reason`.
+  - `documents.parquet` xuất song song với `documents.json` (định dạng D9) cho tới khi chốt một định dạng.
+- **Người chốt:** Nguyễn Huy.
+
 ## Câu hỏi mở
 
 | # | Câu hỏi | Ai chốt | Trạng thái |
@@ -69,4 +78,4 @@ Mỗi quyết định ghi: **ngày, quyết định, lý do, người chốt**. 
 | Q3 | Phạm vi tag: `python`, hay thêm `pandas`, hay tag khác | ETL | Chỉ `python`. 10 trang seed (24/10), rồi tăng lên 100 trang (25/10, D10). Muốn thêm tag thì thêm vào `config/collect.toml`, lịch hằng ngày sẽ lấy tiếp |
 | Q4 | Data contract lên 1.0 | ETL + Hung | Hung đã gửi định dạng (D9). Còn chờ Hung trả lời các trường bổ sung và cách lưu nhãn ([04](04_data_contract.md#câu-hỏi-mở-cần-chốt-với-bên-model)) |
 | Q5 | Ai làm phần "Training + viết báo cáo" | Nam, Hoàng | Chưa chọn |
-| Q6 | Có fine-tune model không | Hung | Chưa chốt ([07](07_modeling_eval.md)) |
+| Q8 | Giữ `documents.json`, `documents.parquet`, hay cả hai | Nhóm | Đang xuất song song (D13) |

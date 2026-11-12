@@ -45,19 +45,19 @@ Có lý do để nghĩ là có, và cũng có lý do để nghĩ là không:
 | `C` (Content) | Tiêu đề + nội dung câu hỏi |
 | `C+Cm` (Content + Comments) | Tiêu đề + nội dung + **comment** |
 
-Nếu còn thời gian sẽ thử thêm `C+Cm+A`, tức thêm cả câu trả lời. Các model cụ thể (từ đơn giản như TF-IDF tới model ngôn ngữ) xem ở [07_modeling_eval.md](07_modeling_eval.md).
+Nếu còn thời gian sẽ thử thêm `C+Cm+A`, tức thêm cả câu trả lời.
 
 **Một bẫy cần tránh:** khi đóng câu hỏi trùng, Stack Overflow tự thêm comment kiểu *"Possible duplicate of …"* chứa luôn link tới câu gốc. Nếu giữ lại, model sẽ "nhìn thấy đáp án" và kết luận rằng comment giúp ích sẽ là kết luận sai. Vì vậy các comment này bị loại khi làm sạch dữ liệu ([05_cleaning_pipeline.md](05_cleaning_pipeline.md), bước 2).
 
 ## 4. Làm sao biết hệ thống gợi ý đúng?
+
+> **Cập nhật 05/11/2026:** bước làm sạch không còn tạo cặp trùng và nhóm trùng ([decisions.md](decisions.md), D13). Phần dưới đây là thiết kế ban đầu.
 
 Nhóm **không phải tự gán nhãn bằng tay**. Đáp án đúng lấy từ chính các đánh dấu "duplicate" của cộng đồng Stack Overflow:
 
 - Lấy một câu hỏi đã bị đóng vì trùng làm query.
 - Các câu hỏi **liên quan** với nó (đáp án đúng) là câu gốc của nó.
 - Trùng có thể nối tiếp nhau. Nếu A trùng B và C cũng trùng B thì A, B, C hỏi cùng một vấn đề. Nhóm gom chúng thành một **nhóm trùng**, và mọi câu trong cùng nhóm đều tính là liên quan với nhau.
-
-Khi chia dữ liệu để train và kiểm tra model, **cả nhóm trùng phải nằm cùng một phía**. Nếu không, model sẽ được "học trước" đúng cặp mà sau đó bị kiểm tra.
 
 ## 5. Đo chất lượng bằng chỉ số nào?
 

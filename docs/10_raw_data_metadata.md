@@ -207,7 +207,7 @@ Ví dụ: `windows-forms` đổi thành `winforms`. Trong dữ liệu hiện t�
 | 3 | **`comment_count` sai** | 935 câu hỏi báo nhiều comment hơn số lấy được, 4 câu thì ngược lại | Tính lại từ comment thực tế |
 | 4 | **Câu gốc bị thiếu** | 3 câu gốc đã bị xóa | Bỏ cặp tương ứng hoặc ghi nhận |
 | 5 | **Thiếu comment** | 75,7% câu hỏi có comment. Với câu bị đóng vì trùng là 76,6% | Cấu hình `C+Cm` sẽ không khác `C` ở khoảng 1/4 số câu |
-| 6 | **Nhóm trùng lệch mạnh** | 4.808 nhóm, trong đó 1 nhóm có 8.042 câu, nhóm lớn thứ hai chỉ 162 câu | Cần xem lại khi chia train/val/test theo nhóm |
+| 6 | **Nhóm trùng lệch mạnh** | 4.808 nhóm, trong đó 1 nhóm có 8.042 câu, nhóm lớn thứ hai chỉ 162 câu | Ghi nhận trong báo cáo |
 | 7 | **Tag đồng nghĩa** | 2.290 câu mang 157 tag cần đổi | Đổi theo `tag_synonyms` nếu dùng tag |
 | 8 | **Ngày tương lai** | Một số `last_activity_date` có giá trị năm 2026 vì dữ liệu lấy vào tháng 10/2026 | Không phải lỗi |
 
@@ -230,5 +230,5 @@ Ví dụ: `windows-forms` đổi thành `winforms`. Trong dữ liệu hiện t�
 ## 10. Liên quan
 
 - Cách lấy dữ liệu: [03_data_source.md](03_data_source.md)
-- Định dạng dữ liệu sạch dùng cho mô hình: [04_data_contract.md](04_data_contract.md)
+- Định dạng dữ liệu sạch: [04_data_contract.md](04_data_contract.md)
 - Các bước làm sạch: [05_cleaning_pipeline.md](05_cleaning_pipeline.md)

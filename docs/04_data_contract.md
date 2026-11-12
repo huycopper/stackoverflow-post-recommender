@@ -1,8 +1,8 @@
 # 04. Data contract
 
-> **Version: 0.3 (DRAFT)**. Hung đã gửi định dạng đầu vào model mong muốn (23/10/2026, mục 3). ETL cần xác nhận với Hung các trường bổ sung ở mục 3, sau đó chốt thành 1.0.
+> **Version: 0.4 (DRAFT)**. Hung đã gửi định dạng đầu vào model mong muốn (23/10/2026, mục 3). ETL cần xác nhận với Hung các trường bổ sung ở mục 3, sau đó chốt thành 1.0.
 
-Đây là **giao diện giữa ETL và bên model**. ETL cam kết xuất đúng định dạng này. Bên model chỉ đọc từ các bảng ở mục 2 và 3, không đọc dữ liệu thô.
+Đây là **giao diện giữa phần làm sạch và những ai dùng dữ liệu sạch**. ETL cam kết xuất đúng định dạng này. Người dùng chỉ đọc từ các bảng ở mục 2 và 3, không đọc dữ liệu thô.
 
 Quy tắc thay đổi:
 
@@ -67,30 +67,11 @@ Thời gian lưu dạng `timestamp[us, UTC]`. ID là ID gốc trên Stack Overfl
 
 Các comment làm lộ đáp án (ví dụ "Possible duplicate of…") **đã bị loại** ở bước làm sạch ([05](05_cleaning_pipeline.md), bước 2).
 
-### `duplicate_pairs.parquet`
+Dữ liệu sạch **không có** ánh xạ câu trùng tới câu gốc và **không chia** train/val/test ([decisions.md](decisions.md), D13). Ánh xạ vẫn còn trong `closed_details.original_questions` của `data/raw/`.
 
-| Trường | Kiểu | Null? | Mô tả |
-|---|---|---|---|
-| `duplicate_id` | int64 | không | Câu hỏi bị đóng vì trùng |
-| `original_id` | int64 | không | Câu hỏi gốc |
+## 3. Dữ liệu ghép sẵn cho mỗi câu hỏi: `data/clean/documents.json` và `documents.parquet`
 
-Cặp này có hướng. Đã bỏ các cặp tự trỏ về chính nó và các cặp mà một trong hai câu không có trong `questions`.
-
-### `duplicate_groups.parquet`
-
-| Trường | Kiểu | Null? | Mô tả |
-|---|---|---|---|
-| `question_id` | int64 | không | |
-| `group_id` | int64 | không | Thành phần liên thông của đồ thị trùng |
-
-### `splits.parquet`
-
-| Trường | Kiểu | Null? | Mô tả |
-|---|---|---|---|
-| `question_id` | int64 | không | |
-| `split` | string | không | `train`, `val` hoặc `test`. **Chia theo `group_id`** |
-
-## 3. Dữ liệu đưa vào model: `data/clean/documents.json`
+Hai file chứa cùng các dòng và cùng các trường. `documents.parquet` là thư mục do Spark ghi, đọc được bằng `pandas.read_parquet`. Hiện xuất song song cho tới khi Hung chọn một định dạng (D13).
 
 ### Định dạng Hung yêu cầu (nhóm Messenger, 23/10/2026 20:37)
 
@@ -121,33 +102,22 @@ Một **mảng JSON**, mỗi phần tử là một câu hỏi. Ví dụ Hung g�
 | `body` | string | `questions.body_text` (đã bóc HTML) | Hung yêu cầu. Có giữ code không: xem câu hỏi mở |
 | `comments` | list\<string\> | `comments.text` của câu hỏi, xếp theo thời gian, **đã bỏ comment làm lộ đáp án**. Rỗng `[]` nếu không có | Hung yêu cầu |
 | `tags` | list\<string\> | `questions.tags` | Hung yêu cầu |
-| `question_id` | int64 | `questions.question_id` | **ETL đề xuất thêm**: cần để nối với nhãn đúng, chia dữ liệu và trích link nguồn |
-| `split` | string | `splits.split` | **ETL đề xuất thêm**: `train`, `val`, `test` theo nhóm trùng |
-| `answers` | list\<string\> | `answers.body_text`, xếp theo điểm | **ETL đề xuất thêm**, tùy chọn: chỉ cần nếu chạy cấu hình `C+Cm+A` |
+| `question_id` | int64 | `questions.question_id` | **ETL đề xuất thêm**: cần để nối với bảng khác và trích link nguồn |
+| `answers` | list\<string\> | `answers.body_text`, xếp theo điểm | **ETL đề xuất thêm**, tùy chọn, **hiện chưa xuất**: chỉ cần nếu chạy cấu hình `C+Cm+A` |
 
-Cấu hình thí nghiệm ([07](07_modeling_eval.md)): `C` dùng `title` + `body`, `C+Cm` dùng thêm `comments`.
+Hai cấu hình văn bản: `C` dùng `title` + `body`, `C+Cm` dùng thêm `comments`.
 
-### Nhãn đúng: `data/clean/qrels.json` (ETL đề xuất)
-
-Mảng các query, tức các câu hỏi bị đóng vì trùng:
-
-```json
-[{"query_id": 1781571, "relevant_ids": [38987], "split": "test"}]
-```
-
-`relevant_ids` là các câu khác cùng nhóm trùng với query (`duplicate_groups`). Định dạng của Hung không có chỗ cho nhãn, nên cần một file riêng như thế này hoặc một cách khác mà Hung chọn.
-
-## Câu hỏi mở cần chốt với bên model
+## Câu hỏi mở
 
 - [x] Định dạng lưu: **mảng JSON** như Hung gửi (23/10). Nếu file quá lớn thì có thể đổi sang JSONL (mỗi dòng một object).
-- [ ] Hung có đồng ý thêm `question_id`, `split` (và `answers` nếu cần) vào mỗi phần tử không?
-- [ ] Nhãn đúng để ở file `qrels.json` như trên, hay Hung muốn cách khác?
+- [ ] Giữ `documents.json`, `documents.parquet`, hay cả hai?
+- [ ] Hung có đồng ý thêm `question_id` (và `answers` nếu cần) vào mỗi phần tử không?
 - [ ] `comments` chỉ lấy comment của câu hỏi (theo ví dụ của Hung), hay lấy cả comment của các câu trả lời?
 - [ ] `body` có giữ code (`body_code`) không, hay bỏ hẳn?
-- [ ] Có cắt độ dài văn bản không (model dạng transformer giới hạn số token)?
 
 ## Changelog
 
+- **0.4** (05/11/2026): bỏ `duplicate_pairs`, `duplicate_groups`, `splits`, file `qrels.json` và trường `split` của `documents`. Thêm `documents.parquet` xuất song song với `documents.json` (D13). `questions.parquet` vẫn có thêm `closed_reason` và `warning_fields` như bản chạy hiện tại.
 - **0.3** (24/10/2026): viết lại mục 3 theo định dạng Hung gửi ngày 23/10: mảng JSON gồm `title`, `body`, `comments`, `tags`, lưu ở `documents.json`. ETL đề xuất thêm `question_id`, `split`, `answers` và file nhãn `qrels.json`, đang chờ Hung xác nhận. Thay cho `documents.parquet` của bản 0.2.
 - **0.2** (24/10/2026): mô tả cụ thể lớp raw theo bộ thu thập: thêm trường `endpoint`, liệt kê tên các thư mục endpoint, `url` không chứa key, raw có thể trùng bản ghi.
 - **0.1** (23/10/2026): bản nháp đầu tiên.
