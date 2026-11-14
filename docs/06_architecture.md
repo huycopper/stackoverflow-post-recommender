@@ -51,6 +51,10 @@ Môn học bắt buộc khai báo mọi thư viện, model và code có sẵn tr
 | Stack Exchange API v2.3 | Nguồn dữ liệu | collect |
 | pyarrow | Bảng Parquet và thống kê trong `explore` | explore |
 | openpyxl | File Excel khám phá dữ liệu | explore |
+| PySpark 3.5.3 (chạy trong Docker) | Làm sạch dữ liệu: khử trùng, chuẩn hóa, lọc, ghép bảng, ghi Parquet | clean |
+| pandas | Đọc bảng sạch, tính thống kê và vẽ trong EDA | eda |
+| matplotlib | Vẽ biểu đồ EDA | eda |
+| scikit-learn | TF-IDF, SVD, k-means trong EDA | eda |
 | tzdata | Dữ liệu múi giờ cho timestamp UTC trên Windows | explore |
 | pytest | Test | dev |
 | ruff | Lint, format | dev |

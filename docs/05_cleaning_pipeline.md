@@ -71,7 +71,7 @@ Code ở `clean/steps/quality.py`, ngưỡng ở mục `[quality]` và `[low_inf
 - Đổi ngày từ số Unix sang UTC timestamp, chuẩn hóa tag (viết thường), ép kiểu theo data contract.
 - Xử lý trường bị thiếu, ví dụ câu hỏi không có comment thì để `comment_count = 0` và `comments = []`.
 - **Không tin `comment_count` của API.** Trong mẫu ngày 24/10 có 80 trên 991 câu hỏi có `comment_count > 0` nhưng endpoint comments trả về 0 comment. Gọi lại cũng vậy (ví dụ câu 79904105). Có thể comment đã bị xóa nhưng vẫn được đếm. Ngày 31/10/2026, API vẫn trả về câu 79904105 nhưng mở trên web thì bị chuyển sang `stackoverflow.com/staging-ground/79904105` và báo "Page not found", trong khi câu 38987 vẫn mở bình thường. Có thể những câu bị lệch `comment_count` là câu không còn xem được trên web, nhưng điều này chưa được kiểm chứng. Không dùng những câu này làm ví dụ trong báo cáo hay demo. Phải tính lại `comment_count` từ comment thực sự lấy được, và ghi con số lệch này vào mục Khó khăn của báo cáo.
-- **Kiểm tra:** chạy validate theo schema. Fail thì dừng pipeline.
+- **Kiểm tra:** không có bước validate schema riêng cho cả bảng. Mỗi trường được kiểm tra lúc chuẩn hóa (kiểu, giá trị tối thiểu, bắt buộc có, ngày hợp lệ); dòng vi phạm bị loại vào `data/clean/rejected/` kèm lý do và được đếm trong `cleaning_stats.json`. Kiểu cột của các bảng đầu ra do code quyết định và đã được đối chiếu thủ công với data contract (13/11/2026). Có thể thêm bước so khớp schema tự động khi chốt data contract 1.0.
 
 ## Báo cáo số liệu
 

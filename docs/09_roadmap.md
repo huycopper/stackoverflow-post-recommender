@@ -40,7 +40,7 @@ Cập nhật lần cuối: **23/10/2026**. Ngày báo cáo tiến độ và báo
 
 ## Giai đoạn 2: Làm sạch, tích hợp, EDA
 
-- [ ] Các bước làm sạch và `cleaning_stats.json`. (Nguyễn Huy)
+- [x] Các bước làm sạch và `cleaning_stats.json`. (Nguyễn Huy, 13/11/2026: xem D14 trong [decisions.md](decisions.md))
 - [x] Ghép `documents.json` và `documents.parquet` theo [04](04_data_contract.md) mục 3. (Nguyễn Huy)
 - [x] EDA và biểu đồ trong `reports/eda/`. (Nguyễn Huy)
 
