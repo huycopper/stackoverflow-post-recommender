@@ -27,8 +27,15 @@ Câu trả lời có `<h2>`, `<a href=...>` và khối code xen giữa chữ. Ng
 ### 2. Lọc comment làm lộ đáp án
 
 - Loại các comment tự sinh hoặc trỏ thẳng tới câu trùng, ví dụ "Possible duplicate of …", "Does this answer your question? …", "This question already has an answer here".
-- Loại comment chỉ chứa link tới một câu hỏi khác trên Stack Overflow.
-- **Lý do:** nếu giữ lại, model `C+Cm` sẽ "nhìn thấy đáp án" và kết luận về vai trò của comment sẽ sai.
+- Mẫu được so trên nội dung comment đã bỏ thẻ HTML, để bắt cả "Does <a…>this</a> answer your question?".
+- **Link tới câu hỏi hoặc câu trả lời khác trên Stack Overflow và các trang Stack Exchange khác (meta.stackoverflow.com, superuser.com, *.stackexchange.com...) được thay bằng `[link]`**, ở comment, body câu hỏi và body câu trả lời. Ví dụ "Also, related: Convert pandas dataframe to NumPy array" (chữ của link là tiêu đề câu gốc) thành "Also, related: [link]". Dòng bị thay có cờ `SO_LINK_REPLACED` ở trường `text` (comment) hoặc `body_text` (câu hỏi, câu trả lời).
+  - Comment: thay hai lượt, trên HTML gốc (thẻ `<a>`, URL trần) rồi trên văn bản đã bóc HTML, để bắt URL bị thẻ hoặc ký tự vô hình chia đôi.
+  - Body: thay thẻ `<a>` trên HTML gốc và URL trần trên phần chữ. **Code trong khối `<pre>` giữ nguyên**, vì code có thể chứa URL thật cần thiết.
+  - Link ra ngoài (tài liệu Python, github, trang `/help/...`) giữ nguyên, vì thường có từ khóa hữu ích và không trỏ tới câu hỏi nào.
+- Xóa khung "Possible Duplicate: [link]" mà Stack Overflow tự chèn ở đầu body câu hỏi bị đóng vì trùng (trước khoảng 2013). Chỉ xóa khung ở đầu body; câu người hỏi tự viết về câu trùng thì giữ. Cờ `DUPLICATE_BANNER_REMOVED` ở `body_text`.
+- Comment chỉ có link sang câu hỏi khác (sau khi thay chỉ còn `[link]`, dấu câu, ký hiệu và khoảng trắng) bị **loại** ở bước chuẩn hóa với lý do `ONLY_LINK`, giống comment rỗng.
+- Bỏ cặp ký tự vô hình (U+200C U+200B) mà Stack Overflow chèn vào giữa từ dài trong comment để xuống dòng; có ở 4.881 comment. Body câu hỏi và câu trả lời giữ nguyên, vì vài câu có thể đang hỏi chính về ký tự vô hình.
+- **Lý do:** nếu giữ lại, model `C+Cm` sẽ "nhìn thấy đáp án" và kết luận về vai trò của comment sẽ sai. Đo ngày 12/11/2026: 50.910 comment (8,1%) có link kiểu này, trong đó 2.520 comment dưới 2.306 câu trùng trỏ thẳng tới câu gốc của nó. Ví dụ thật: `data/exports/comment_links_review_20261112.xlsx`.
 - **Số liệu:** số comment bị loại theo từng mẫu.
 
 ### 3. Ghép dữ liệu từ nhiều endpoint (data integration, bài L3)
@@ -41,9 +48,23 @@ Câu trả lời có `<h2>`, `<a href=...>` và khối code xen giữa chữ. Ng
 
 ### 4. Lọc bài kém chất lượng
 
-- Bài quá ngắn (ngưỡng chọn sau EDA), không phải tiếng Anh, điểm âm sâu, bài gần như giống hệt nhau, người đăng đã xóa tài khoản (`owner.user_type = "does_not_exist"`).
-- Ngưỡng nào cũng phải ghi lại và giải thích lý do chọn.
-- **Số liệu:** số bài bị loại theo từng lý do.
+Code ở `clean/steps/quality.py`, ngưỡng ở mục `[quality]` và `[low_info_comments]` của `config/clean.toml`. Lý do chọn từng ngưỡng ghi ở [decisions.md](decisions.md), D14. Ví dụ thật quanh từng ngưỡng xem bằng file Excel `data/exports/quality_review_20261112.xlsx`.
+
+| Luật | Xử lý | Lần chạy 12/11/2026 |
+|---|---|---:|
+| Câu hỏi có `score <= -5` | Loại (`SCORE_TOO_LOW`) | 286 |
+| Ngôn ngữ (câu có chữ không phải Latin) | **Không lọc**. Đọc mẫu thì đều là câu tiếng Anh dùng chữ nước ngoài làm ví dụ, xem D14 | 0 |
+| Câu hỏi trùng y hệt tiêu đề, chữ và code với câu khác | Giữ một bản, loại các bản còn lại (`DUPLICATE_TEXT`). Bản được giữ: bị đóng vì trùng, rồi nhiều câu trả lời hơn, rồi điểm cao hơn, rồi mới hơn (D14) | 19 |
+| Comment trùng nội dung trong cùng một bài | Loại bản sau (`DUPLICATE_IN_POST`) | 72 |
+| Câu hỏi bị đóng vì lý do khác "trùng" | Chỉ gắn cờ ở `closed_reason` (`CLOSED_NOT_AS_DUPLICATE`) | 1.517 |
+| Body ngắn, chỉ có code | **Không lọc theo độ dài**, chỉ gắn cờ `CODE_ONLY`, `SHORT_TEXT` (D14) | |
+| Người đăng đã xóa tài khoản | Chỉ gắn cờ (đã có từ bước chuẩn hóa) | |
+| Comment ≤ 2 từ; hoặc comment ≤ 20 từ khớp mẫu "please edit/provide…", "welcome to Stack Overflow", "what have you tried", "minimal example"; hoặc câu mẫu tự sinh của hàng đợi duyệt bài ("Your answer could be improved…", "As it's currently written, your answer is unclear…") | Chỉ gắn cờ `is_low_info`, lý do ở `low_info_reasons` | xem `low_info_comments` trong `cleaning_stats.json` |
+| Comment tự sinh "This question is similar to: [link]…" (bản mới của "Possible duplicate of…") | **Loại** ở bước 2 (lộ đáp án) | |
+
+- Loại câu hỏi thì câu trả lời và comment của nó cũng bị loại ở bước "mồ côi" (lần chạy 12/11: 544 câu trả lời, 1.743 comment).
+- **Khi có thêm dữ liệu:** chạy lại pipeline rồi xem `score_profile` trong `reports/cleaning_stats.json`. Bảng này tính **trước** khi lọc, cho mỗi nhóm điểm tỉ lệ câu bị đóng vì trùng, đóng vì lý do khác và không có code. Nếu nhóm `<= -5` không còn khác hẳn nhóm `>= 0` thì xem lại ngưỡng.
+- **Số liệu:** số bài bị loại theo từng lý do nằm ở bước `quality` và `repeats` trong `cleaning_stats.json`.
 
 ### 5. Chuẩn hóa kiểu dữ liệu
 

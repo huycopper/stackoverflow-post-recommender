@@ -1,6 +1,6 @@
 # 04. Data contract
 
-> **Version: 0.4 (DRAFT)**. Hung đã gửi định dạng đầu vào model mong muốn (23/10/2026, mục 3). ETL cần xác nhận với Hung các trường bổ sung ở mục 3, sau đó chốt thành 1.0.
+> **Version: 0.5 (DRAFT)**. Hung đã gửi định dạng đầu vào model mong muốn (23/10/2026, mục 3). ETL cần xác nhận với Hung các trường bổ sung ở mục 3, sau đó chốt thành 1.0.
 
 Đây là **giao diện giữa phần làm sạch và những ai dùng dữ liệu sạch**. ETL cam kết xuất đúng định dạng này. Người dùng chỉ đọc từ các bảng ở mục 2 và 3, không đọc dữ liệu thô.
 
@@ -61,9 +61,11 @@ Thời gian lưu dạng `timestamp[us, UTC]`. ID là ID gốc trên Stack Overfl
 | `post_id` | int64 | không | ID câu hỏi hoặc câu trả lời |
 | `post_type` | string | không | `question` hoặc `answer` |
 | `question_id` | int64 | không | Câu hỏi gốc của thread, để join nhanh |
-| `text` | string | không | Đã bóc HTML và chuẩn hóa |
+| `text` | string | không | Đã bóc HTML và chuẩn hóa. Link tới câu hỏi hoặc câu trả lời khác trên Stack Overflow thay bằng `[link]` |
 | `score` | int32 | có | |
 | `creation_date` | timestamp | không | |
+| `is_low_info` | bool | không | Comment ít thông tin: ≤ 2 từ, hoặc ≤ 20 từ và kiểu "please edit/provide…", hoặc câu mẫu tự sinh của hàng đợi duyệt bài. Chỉ gắn cờ, không loại (D14) |
+| `low_info_reasons` | list\<string\> | không | Lý do gắn cờ: `SHORT` (≤ 2 từ) và/hoặc tên mẫu câu khớp, như `asks for details`, `welcome`. Rỗng nếu `is_low_info` là false |
 
 Các comment làm lộ đáp án (ví dụ "Possible duplicate of…") **đã bị loại** ở bước làm sạch ([05](05_cleaning_pipeline.md), bước 2).
 
@@ -101,6 +103,7 @@ Một **mảng JSON**, mỗi phần tử là một câu hỏi. Ví dụ Hung g�
 | `title` | string | `questions.title` (đã giải mã HTML) | Hung yêu cầu |
 | `body` | string | `questions.body_text` (đã bóc HTML) | Hung yêu cầu. Có giữ code không: xem câu hỏi mở |
 | `comments` | list\<string\> | `comments.text` của câu hỏi, xếp theo thời gian, **đã bỏ comment làm lộ đáp án**. Rỗng `[]` nếu không có | Hung yêu cầu |
+| `comments_low_info` | list\<bool\> | `comments.is_low_info`, cùng thứ tự với `comments` (phần tử thứ i là nhãn của comment thứ i) | ETL thêm (13/11/2026, D14), để lọc được comment ít thông tin mà không phải ghép lại từ `comments.parquet` |
 | `tags` | list\<string\> | `questions.tags` | Hung yêu cầu |
 | `question_id` | int64 | `questions.question_id` | **ETL đề xuất thêm**: cần để nối với bảng khác và trích link nguồn |
 | `answers` | list\<string\> | `answers.body_text`, xếp theo điểm | **ETL đề xuất thêm**, tùy chọn, **hiện chưa xuất**: chỉ cần nếu chạy cấu hình `C+Cm+A` |
@@ -117,6 +120,7 @@ Hai cấu hình văn bản: `C` dùng `title` + `body`, `C+Cm` dùng thêm `comm
 
 ## Changelog
 
+- **0.5** (12–13/11/2026): `documents` thêm trường `comments_low_info` (list\<bool\>, song song với `comments`). `comments.parquet` thêm trường `is_low_info` (bool) và `low_info_reasons` (list\<string\>): comment ≤ 2 từ hoặc khớp mẫu "please edit/provide…", "welcome to Stack Overflow"… Chỉ gắn cờ, comment vẫn được giữ. Trong `comments.text`, link tới câu hỏi hoặc câu trả lời khác trên Stack Overflow được thay bằng `[link]`. Bước lọc chất lượng loại thêm một số câu hỏi và comment ([05](05_cleaning_pipeline.md), bước 2 và 4; D14).
 - **0.4** (05/11/2026): bỏ `duplicate_pairs`, `duplicate_groups`, `splits`, file `qrels.json` và trường `split` của `documents`. Thêm `documents.parquet` xuất song song với `documents.json` (D13). `questions.parquet` vẫn có thêm `closed_reason` và `warning_fields` như bản chạy hiện tại.
 - **0.3** (24/10/2026): viết lại mục 3 theo định dạng Hung gửi ngày 23/10: mảng JSON gồm `title`, `body`, `comments`, `tags`, lưu ở `documents.json`. ETL đề xuất thêm `question_id`, `split`, `answers` và file nhãn `qrels.json`, đang chờ Hung xác nhận. Thay cho `documents.parquet` của bản 0.2.
 - **0.2** (24/10/2026): mô tả cụ thể lớp raw theo bộ thu thập: thêm trường `endpoint`, liệt kê tên các thư mục endpoint, `url` không chứa key, raw có thể trùng bản ghi.
