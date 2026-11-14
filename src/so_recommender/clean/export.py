@@ -1,8 +1,8 @@
 """One row per question: documents.json and documents.parquet (data contract, section 3).
 
-Columns: question_id, title, body, comments, tags. body is the text without code blocks; comments
-are the question's own comments, oldest first, with the leaky ones already removed by the
-cleaning pipeline.
+Columns: question_id, title, body, comments, comments_low_info, tags. body is the text without
+code blocks; comments are the question's own comments, oldest first, with the leaky ones already
+removed by the cleaning pipeline. comments_low_info[i] is the is_low_info flag of comments[i].
 
 Both files hold the same rows. JSON is written row by row, so the driver never holds it in
 memory. Parquet keeps the column types and reads faster.
@@ -51,9 +51,16 @@ def export(cfg: CleanConfig, spark: SparkSession) -> dict[str, Any]:
         .filter(F.col("post_type") == "question")
         .groupBy("question_id")
         .agg(
-            F.sort_array(F.collect_list(F.struct("creation_date", "comment_id", "text"))).alias("c")
+            # One sorted list of structs, so text and flag stay in the same order.
+            F.sort_array(
+                F.collect_list(F.struct("creation_date", "comment_id", "text", "is_low_info"))
+            ).alias("c")
         )
-        .select("question_id", F.col("c.text").alias("comments"))
+        .select(
+            "question_id",
+            F.col("c.text").alias("comments"),
+            F.col("c.is_low_info").alias("comments_low_info"),
+        )
     )
     documents = (
         table("questions")
@@ -63,6 +70,9 @@ def export(cfg: CleanConfig, spark: SparkSession) -> dict[str, Any]:
             "title",
             F.col("body_text").alias("body"),
             F.coalesce("comments", F.expr("CAST(array() AS ARRAY<STRING>)")).alias("comments"),
+            F.coalesce("comments_low_info", F.expr("CAST(array() AS ARRAY<BOOLEAN>)")).alias(
+                "comments_low_info"
+            ),
             "tags",
         )
         .orderBy("question_id")

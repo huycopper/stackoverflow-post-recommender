@@ -1,9 +1,9 @@
 {
-  "documents": 93704,
-  "documents_with_comments": 68458,
+  "documents": 93399,
+  "documents_with_comments": 67741,
   "files": {
-    "data/clean/documents.json": 94.6,
-    "data/clean/documents.parquet": 52.5
+    "data/clean/documents.json": 96.4,
+    "data/clean/documents.parquet": 51.6
   },
   "file_size_unit": "MB"
 }

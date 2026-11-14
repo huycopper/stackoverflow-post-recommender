@@ -11,6 +11,8 @@ clean_field() picks the function from the `kind` written in fields.py.
 
 from __future__ import annotations
 
+import re
+
 from pyspark.sql import Column, DataFrame
 from pyspark.sql import functions as F
 from pyspark.sql.types import ArrayType, BooleanType, StringType, StructField, StructType
@@ -25,6 +27,7 @@ STACK_OVERFLOW_START = 1_214_870_400  # 2008-07-01 UTC: no post can be older
 TITLE_MAX_LENGTH = 300
 LINK_MAX_LENGTH = 2000
 SHORT_BODY_CHARS = 30
+DUPLICATE_REASONS = ["Duplicate", "exact duplicate"]
 USER_TYPES = ["registered", "unregistered", "moderator", "team_admin", "does_not_exist"]
 CLOSED_REASONS = [
     "Duplicate",
@@ -82,7 +85,11 @@ def clean_plain_text(df: DataFrame, source: Column, target: str, max_length: int
 
 def clean_closed_reason(df: DataFrame, source: Column, target: str):
     value = F.col(target)
-    warnings = [("UNEXPECTED_VALUE", ~value.isin(*CLOSED_REASONS))]
+    warnings = [
+        ("UNEXPECTED_VALUE", ~value.isin(*CLOSED_REASONS)),
+        # Closed as off-topic, opinion-based, ...: kept, because it can still be a good question.
+        ("CLOSED_NOT_AS_DUPLICATE", ~value.isin(*DUPLICATE_REASONS)),
+    ]
     return df.withColumn(target, F.trim(source)), [], warnings
 
 
@@ -95,11 +102,68 @@ def clean_user_type(df: DataFrame, source: Column, target: str):
     return df.withColumn(target, F.trim(source)), [], warnings
 
 
+# Links to another question or answer on Stack Overflow or another Stack Exchange site (meta,
+# superuser, ...). Their visible text is often the title of that question, which in a duplicate is
+# the original's title: the answer itself. Where there is no title, the URL is only noise.
+_SE_HOST = (
+    r"(?:[\w-]+\.)*(?:stackoverflow\.com|stackexchange\.com|superuser\.com|serverfault\.com"
+    r"|askubuntu\.com|mathoverflow\.net|stackapps\.com)"
+)
+_SE_HREF = re.compile(rf"^(?:https?:)?(?://{_SE_HOST})?/(?:questions|q|a)/\d+", re.I)
+_ANCHOR = re.compile(r"<a\b[^>]*?href=([\"'])(.*?)\1[^>]*>.*?</a>", re.I | re.S)
+_BARE_SE_URL = re.compile(rf"(?<![\w.])(?:https?://)?{_SE_HOST}/(?:questions|q|a)/\d+\S*", re.I)
+LINK_PLACEHOLDER = "[link]"
+
+
+def replace_link_tags(html_text: str | None) -> str | None:
+    """Replace every <a> that points to a Stack Exchange question or answer."""
+    if html_text is None:
+        return None
+    return _ANCHOR.sub(
+        lambda m: LINK_PLACEHOLDER if _SE_HREF.match(m.group(2)) else m.group(0), html_text
+    )
+
+
+def replace_bare_links(text: str | None) -> str | None:
+    """Replace Stack Exchange question/answer URLs written as plain text."""
+    if text is None:
+        return None
+    return _BARE_SE_URL.sub(LINK_PLACEHOLDER, text)
+
+
+def replace_so_links(html_text: str | None) -> str | None:
+    """Both of the above, on HTML that has no code blocks to protect (comments)."""
+    return replace_bare_links(replace_link_tags(html_text))
+
+
+def _links_replaced(value: Column, source: Column) -> Column:
+    placeholder = F.lit(LINK_PLACEHOLDER)
+    return value.contains(placeholder) & ~source.contains(placeholder)
+
+
+# The box Stack Overflow put at the top of a question closed as a duplicate (until about 2013):
+# "<blockquote><p><strong>Possible Duplicate:</strong> <a ...>original</a></p></blockquote>".
+# Only this box at the very top is removed; a sentence the author wrote about a possible
+# duplicate ("Edit: this is not a duplicate of ...") is their own content and stays.
+_BANNER_HEAD = (
+    r"^\s*<blockquote>\s*<p>\s*<strong>\s*"
+    r"(?:possible duplicates?|this question already ha(?:s|ve) (?:an )?answers? here)"
+)
+_DUPLICATE_BANNER = re.compile(_BANNER_HEAD + r"\s*:?\s*</strong>.*?</blockquote>", re.I | re.S)
+
+
+def remove_duplicate_banner(html_text: str | None) -> str | None:
+    if html_text is None:
+        return None
+    return _DUPLICATE_BANNER.sub("", html_text, count=1)
+
+
 def _parse_body(value: str | None) -> dict | None:
-    parsed = html_to_text(value)
+    """Question/answer body. Links are replaced in the text only: code blocks stay as written."""
+    parsed = html_to_text(replace_link_tags(remove_duplicate_banner(value)))
     if parsed is None:
         return None
-    return {"text": parsed[0], "code": parsed[1]}
+    return {"text": replace_bare_links(parsed[0]), "code": parsed[1]}
 
 
 _body_schema = StructType(
@@ -121,6 +185,8 @@ def clean_html_body(df: DataFrame, source: Column, target: str, code_column: str
     warnings = [
         ("CODE_ONLY", no_text & (F.size(code) > 0)),
         ("SHORT_TEXT", ~no_text & (F.length(value) < F.lit(SHORT_BODY_CHARS))),
+        ("SO_LINK_REPLACED", _links_replaced(value, source)),
+        ("DUPLICATE_BANNER_REMOVED", source.rlike("(?is)" + _BANNER_HEAD)),
     ]
     df = df.withColumn(helper, _body_udf(source))
     df = df.withColumn(target, F.col(f"{helper}.text"))
@@ -128,25 +194,38 @@ def clean_html_body(df: DataFrame, source: Column, target: str, code_column: str
     return df, rejects, warnings
 
 
+# Stack Overflow puts this invisible pair inside long words of comments so they can wrap
+# ("duplic\u200c\u200bate"); it breaks words and URLs.
+COMMENT_WRAP_MARK = "\u200c\u200b"
+
+
 def _parse_comment(value: str | None) -> str | None:
-    parsed = html_to_text(value)
+    parsed = html_to_text(replace_so_links(value))
     if parsed is None:
         return None
     # Comments have no code blocks in practice; if one slips in, keep it as text.
-    return collapse_lines("\n".join([parsed[0], *parsed[1]]))
+    text = collapse_lines("\n".join([parsed[0], *parsed[1]])).replace(COMMENT_WRAP_MARK, "")
+    # Second pass: a URL split by a tag or the wrap mark in the HTML is whole only now.
+    return replace_bare_links(text)
 
 
 _comment_udf = F.udf(_parse_comment, StringType()).asNondeterministic()
 
 
 def clean_comment_text(df: DataFrame, source: Column, target: str):
-    """Comment bodies: short HTML with links and inline code only."""
+    """Comment bodies: short HTML with links and inline code only. Links to other Stack Overflow
+    questions or answers become [link] (decisions.md, D14)."""
     value = F.col(target)
+    # Nothing left once the [link] placeholders, spaces, punctuation and symbols (emoji) are taken
+    # out: the comment was only a link to another question, so it is as empty as a blank comment.
+    left_without_links = F.regexp_replace(value, r"\[link\]|[\s\p{P}\p{S}]", "")
     rejects = [
         ("PARSE_FAILED", source.isNotNull() & value.isNull()),
         ("TEXT_BELOW_MIN_LENGTH", F.length(value) < F.lit(1)),
+        ("ONLY_LINK", (F.length(value) > 0) & (F.length(left_without_links) == 0)),
     ]
-    return df.withColumn(target, _comment_udf(source)), rejects, []
+    warnings = [("SO_LINK_REPLACED", _links_replaced(value, source))]
+    return df.withColumn(target, _comment_udf(source)), rejects, warnings
 
 
 def normalize_tags(tags: list[str] | None, synonyms: dict[str, str]) -> dict | None:

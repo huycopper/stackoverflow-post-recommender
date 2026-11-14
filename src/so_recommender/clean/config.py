@@ -18,7 +18,10 @@ class CleanConfig:
     export_stats_file: Path
     spark: dict[str, Any]
     leak_patterns: dict[str, str]
+    low_info_patterns: dict[str, str]
+    low_info_templates: dict[str, str]
     closed_reasons: list[str]
+    quality: dict[str, Any]
 
 
 def load_config(path: str | Path) -> CleanConfig:
@@ -28,7 +31,10 @@ def load_config(path: str | Path) -> CleanConfig:
         **paths,
         spark=data["spark"],
         leak_patterns=data["leaky_comments"],
+        low_info_patterns=data["low_info_comments"],
+        low_info_templates=data["low_info_templates"],
         closed_reasons=data["duplicates"]["closed_reasons"],
+        quality=data["quality"],
     )
 
 

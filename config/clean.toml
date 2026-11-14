@@ -16,14 +16,39 @@ driver_memory = "4g"
 shuffle_partitions = 16
 
 # Comments matching any of these are dropped: they give away the duplicate link.
-# Java regexes, matched on the raw HTML of the comment.
+# Java regexes, matched on the raw HTML of the comment with its tags taken out.
 [leaky_comments]
 "possible duplicate" = "(?i)possible duplicate"
 "does this answer your question" = "(?i)does this answer your question"
 "already has an answer" = "(?i)already ha(s|ve) an? answers?"
 "duplicate of" = "(?i)duplicate of"
-# Off for now: also catches ordinary comments that just link to another question.
-# "link to another question" = '(?i)stackoverflow\.com/(questions|q)/\d+'
+# Newer form of "Possible duplicate of" (2024 on), posted when someone suggests a duplicate.
+"this question is similar to" = "(?i)this question is similar to"
+# Links to other questions are not dropped here: they become [link] (cleaning doc, step 2).
+
+# Comments that carry little content are flagged (is_low_info), not dropped: whoever uses the
+# data decides. Java regexes on the clean text. A comment with few words is flagged too.
+# These phrases only count in short comments (quality.low_info_pattern_max_words): a long
+# comment that starts with "Can you show..." usually goes on with a real diagnosis.
+[low_info_comments]
+"asks for details" = "(?i)(please|could you|can you|would you) (please )?(edit|add|provide|post|show|include|share|clarify|give)"
+"welcome" = "(?i)welcome to stack ?overflow"
+"what have you tried" = "(?i)what have you tried"
+"minimal example" = "(?i)minimal (reproducible )?example"
+
+# Canned texts posted by review queues under answers: flagged whatever their length.
+[low_info_templates]
+"answer could be improved" = "(?i)your answer could be improved with additional supporting information"
+"answer is unclear" = "(?i)as it.s currently written, your answer is unclear"
+
+[quality]
+# Questions with a score at or below this are dropped (286 of 93,704 in the first full run).
+min_question_score = -5
+# No language rule: foreign script here is example content inside English questions (D14).
+# Comments with at most this many words are flagged as low information.
+low_info_max_words = 2
+# The [low_info_comments] phrases only flag comments with at most this many words.
+low_info_pattern_max_words = 20
 
 [duplicates]
 # Questions closed for these reasons get is_closed_duplicate = true. "exact duplicate" is the

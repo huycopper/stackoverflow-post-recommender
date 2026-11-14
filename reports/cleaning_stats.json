@@ -1,7 +1,7 @@
 {
-  "started_at": "2026-11-05T10:30:01+00:00",
-  "finished_at": "2026-11-05T10:32:21+00:00",
-  "seconds": 139.4,
+  "started_at": "2026-11-13T04:22:08+00:00",
+  "finished_at": "2026-11-13T04:24:39+00:00",
+  "seconds": 150.5,
   "steps": [
     {
       "entity": "question",
@@ -61,31 +61,72 @@
       "entity": "comment",
       "step": "normalize",
       "rows_in": 647383,
-      "rows_out": 647383,
-      "rows_removed": 0,
-      "reasons": {},
+      "rows_out": 644925,
+      "rows_removed": 2458,
+      "reasons": {
+        "text": 2458
+      },
       "note": "reasons = target fields with a REJECTED check (a row can have several)"
+    },
+    {
+      "entity": "question",
+      "step": "quality",
+      "rows_in": 93704,
+      "rows_out": 93399,
+      "rows_removed": 305,
+      "reasons": {
+        "SCORE_TOO_LOW": 286,
+        "DUPLICATE_TEXT": 19
+      },
+      "examples": [
+        {
+          "question_id": 42890954,
+          "title": "+= and -= expressions in Python (?)",
+          "score": -6,
+          "reasons": [
+            "SCORE_TOO_LOW"
+          ]
+        },
+        {
+          "question_id": 79500975,
+          "title": "Finding coprime numbers",
+          "score": -7,
+          "reasons": [
+            "SCORE_TOO_LOW"
+          ]
+        },
+        {
+          "question_id": 74334552,
+          "title": "How can do time minus with python?",
+          "score": -6,
+          "reasons": [
+            "SCORE_TOO_LOW"
+          ]
+        }
+      ],
+      "note": "score <= -5, or the same title and body as a smaller question id"
     },
     {
       "entity": "answer",
       "step": "orphans",
       "rows_in": 257960,
-      "rows_out": 257960,
-      "rows_removed": 0,
+      "rows_out": 257436,
+      "rows_removed": 524,
       "reasons": {
-        "QUESTION_NOT_IN_CLEAN": 0
+        "QUESTION_NOT_IN_CLEAN": 524
       }
     },
     {
       "entity": "comment",
       "step": "leaky_comments",
-      "rows_in": 647383,
-      "rows_out": 632388,
-      "rows_removed": 14995,
+      "rows_in": 644925,
+      "rows_out": 629473,
+      "rows_removed": 15452,
       "reasons": {
-        "does this answer your question": 8701,
-        "duplicate of": 5897,
-        "possible duplicate": 5017,
+        "does this answer your question": 8765,
+        "duplicate of": 5900,
+        "possible duplicate": 5021,
+        "this question is similar to": 387,
         "already has an answer": 33
       },
       "examples": [
@@ -120,20 +161,36 @@
     },
     {
       "entity": "comment",
-      "step": "orphans",
-      "rows_in": 632388,
-      "rows_out": 632388,
-      "rows_removed": 0,
+      "step": "repeats",
+      "rows_in": 629473,
+      "rows_out": 629326,
+      "rows_removed": 147,
       "reasons": {
-        "POST_NOT_IN_CLEAN": 0
+        "DUPLICATE_IN_POST": 147
+      },
+      "note": "same text twice in one post: the comment with the smallest id is kept"
+    },
+    {
+      "entity": "comment",
+      "step": "orphans",
+      "rows_in": 629326,
+      "rows_out": 627669,
+      "rows_removed": 1657,
+      "reasons": {
+        "POST_NOT_IN_CLEAN": 1657
       }
     }
   ],
   "field_issues": {
     "question": {
       "body_text": {
-        "SHORT_TEXT": 112,
-        "CODE_ONLY": 105
+        "SO_LINK_REPLACED": 13565,
+        "SHORT_TEXT": 113,
+        "CODE_ONLY": 105,
+        "DUPLICATE_BANNER_REMOVED": 80
+      },
+      "closed_reason": {
+        "CLOSED_NOT_AS_DUPLICATE": 1517
       },
       "owner_user_type": {
         "VALUE_DOES_NOT_EXIST": 2230
@@ -147,7 +204,8 @@
     },
     "answer": {
       "body_text": {
-        "SHORT_TEXT": 10783,
+        "SO_LINK_REPLACED": 32936,
+        "SHORT_TEXT": 10966,
         "CODE_ONLY": 5617
       },
       "owner_user_type": {
@@ -157,6 +215,10 @@
     "comment": {
       "owner_user_type": {
         "VALUE_DOES_NOT_EXIST": 11169
+      },
+      "text": {
+        "SO_LINK_REPLACED": 65561,
+        "ONLY_LINK": 2458
       }
     }
   },
@@ -166,7 +228,7 @@
       {
         "question_id": 19339,
         "before": "<p>I have a list of 2-item tuples and I'd like to convert them to 2 lists where the first contains the first item in each tuple and the second list holds the second item.</p>\n<p><strong>For example:</strong></p>\n<pre><code>original = [('a', 1), ('b', 2), ('c', 3), ('d', 4)]\n# and I want to become...…",
-        "after_text": "I have a list of 2-item tuples and I'd like to convert them to 2 lists where the first contains the first item in each tuple and the second list holds the second item.\nFor example:\nIs there a builtin function that does that?\nSee also: Transpose list of lists if the specific choice of lists vs. tuple…",
+        "after_text": "I have a list of 2-item tuples and I'd like to convert them to 2 lists where the first contains the first item in each tuple and the second list holds the second item.\nFor example:\nIs there a builtin function that does that?\nSee also: [link] if the specific choice of lists vs. tuples in the result m…",
         "after_code_blocks": 1
       },
       {
@@ -245,14 +307,54 @@
       }
     ]
   },
+  "score_profile": {
+    "groups": [
+      {
+        "score_group": "<= -5",
+        "questions": 286,
+        "closed_duplicate_share": 0.4371,
+        "closed_other_share": 0.2133,
+        "no_code_share": 0.2378
+      },
+      {
+        "score_group": "-4 .. -1",
+        "questions": 8669,
+        "closed_duplicate_share": 0.4117,
+        "closed_other_share": 0.0584,
+        "no_code_share": 0.1789
+      },
+      {
+        "score_group": ">= 0",
+        "questions": 84749,
+        "closed_duplicate_share": 0.1952,
+        "closed_other_share": 0.0112,
+        "no_code_share": 0.1793
+      }
+    ],
+    "note": "before the quality filter; the first group is dropped (decisions.md, D14)"
+  },
   "comment_count_mismatch": {
-    "api_more_than_kept": 14776,
-    "api_less_than_kept": 4,
+    "api_more_than_kept": 16885,
+    "api_less_than_kept": 3,
     "note": "kept = question comments after leak and orphan filters"
   },
+  "low_info_comments": {
+    "flagged": 13478,
+    "of": 627669,
+    "by_reason": {
+      "minimal example": 522,
+      "asks for details": 5386,
+      "what have you tried": 309,
+      "welcome": 156,
+      "SHORT": 6187,
+      "answer is unclear": 453,
+      "answer could be improved": 734
+    },
+    "note": "kept in comments.parquet with is_low_info = true; a comment can match several"
+  },
   "outputs": {
-    "questions": 93704,
-    "answers": 257960,
-    "comments": 632388
+    "questions": 93399,
+    "answers": 257436,
+    "comments": 627669
   }
 }

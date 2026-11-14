@@ -12,9 +12,13 @@ from pyspark.sql import functions as F
 
 
 def flag_leaks(comments: DataFrame, patterns: dict[str, str]) -> DataFrame:
-    """Add `leak_patterns`: names of the patterns found in the raw HTML of the comment."""
+    """Add `leak_patterns`: names of the patterns found in the comment.
+
+    Patterns are matched on the raw HTML with the tags taken out: in "Does <a ...>this</a> answer
+    your question?" the tags would otherwise break the phrase.
+    """
     if not patterns:
         return comments.withColumn("leak_patterns", F.expr("CAST(array() AS ARRAY<STRING>)"))
-    body = F.col("raw.body")
+    body = F.regexp_replace(F.col("raw.body"), "<[^>]+>", "")
     matches = [F.when(body.rlike(regex), F.lit(name)) for name, regex in patterns.items()]
     return comments.withColumn("leak_patterns", F.array_compact(F.array(*matches)))

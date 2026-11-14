@@ -1,7 +1,8 @@
 """Raw API responses -> clean Parquet tables, rejected rows and cleaning statistics.
 
-Order: tag synonyms -> per entity (load, dedup, normalize) -> answers whose question is gone ->
-leaky comments -> comments whose post is gone -> recount answers/comments -> write everything.
+Order: tag synonyms -> per entity (load, dedup, normalize) -> question quality rules -> answers
+whose question is gone -> leaky comments -> repeated comments -> comments whose post is gone ->
+recount answers/comments -> write everything.
 
 This stage only cleans: no duplicate mapping and no train/val/test split (decisions.md, D13).
 """
@@ -18,10 +19,11 @@ from pyspark.sql import functions as F
 
 from .config import CleanConfig
 from .fields import ANSWER, COMMENT, QUESTION, TAG_SYNONYM
-from .normalize import REJECTED, normalize_entity
+from .normalize import DUPLICATE_REASONS, REJECTED, normalize_entity
 from .stats import CleaningStats, count_by, examples
 from .steps.leaks import flag_leaks
 from .steps.load import keep_latest, load_items
+from .steps.quality import flag_comment_quality, flag_question_quality, score_profile
 
 log = logging.getLogger(__name__)
 
@@ -64,6 +66,8 @@ COMMENT_COLUMNS = [
     "text",
     "score",
     "creation_date",
+    "is_low_info",
+    "low_info_reasons",
     "warning_fields",
 ]
 
@@ -178,6 +182,38 @@ def run(cfg: CleanConfig, spark: SparkSession) -> dict[str, Any]:
     questions, answers, comments = kept["question"], kept["answer"], kept["comment"]
     stats.extra["examples"] = _normalize_examples(questions)
 
+    # Quality rules for questions: bad score, exact copies. The score profile is
+    # taken before the filter so the threshold can be checked again when more data is collected.
+    stats.extra["score_profile"] = {
+        "groups": score_profile(questions, cfg.quality["min_question_score"], DUPLICATE_REASONS),
+        "note": "before the quality filter; the first group is dropped (decisions.md, D14)",
+    }
+    questions = flag_question_quality(questions, cfg.quality).persist(CACHE)
+    bad_questions = questions.filter(F.size("quality_rejects") > 0)
+    n_questions = questions.count()
+    questions = questions.filter(F.size("quality_rejects") == 0).drop("quality_rejects")
+    stats.step(
+        "question",
+        "quality",
+        n_questions,
+        questions.count(),
+        count_by(bad_questions, "quality_rejects"),
+        examples=examples(
+            bad_questions,
+            {
+                "question_id": F.col("question_id"),
+                "title": F.col("title"),
+                "score": F.col("score"),
+                "reasons": F.col("quality_rejects"),
+            },
+        ),
+        note=f"score <= {cfg.quality['min_question_score']}, "
+        "or the same title and body as a smaller question id",
+    )
+    rejected["question"].append(
+        _rejected(bad_questions, "question_id", "quality", F.col("quality_rejects"))
+    )
+
     # Answers whose question did not survive cleaning.
     question_ids = questions.select("question_id")
     n_answers = answers.count()
@@ -224,6 +260,25 @@ def run(cfg: CleanConfig, spark: SparkSession) -> dict[str, Any]:
     )
     rejected["comment"].append(
         _rejected(leaky, "comment_id", "leaky_comments", F.col("leak_patterns"))
+    )
+
+    # Repeated comments inside one post are dropped; low-information ones are only flagged.
+    comments = flag_comment_quality(
+        comments, cfg.low_info_patterns, cfg.low_info_templates, cfg.quality
+    ).persist(CACHE)
+    repeated = comments.filter(F.size("quality_rejects") > 0)
+    n_comments = comments.count()
+    comments = comments.filter(F.size("quality_rejects") == 0)
+    stats.step(
+        "comment",
+        "repeats",
+        n_comments,
+        comments.count(),
+        count_by(repeated, "quality_rejects"),
+        note="same text twice in one post: the comment with the smallest id is kept",
+    )
+    rejected["comment"].append(
+        _rejected(repeated, "comment_id", "repeats", F.col("quality_rejects"))
     )
 
     # Comments whose post did not survive; attach the thread's question_id.
@@ -290,6 +345,12 @@ def run(cfg: CleanConfig, spark: SparkSession) -> dict[str, Any]:
             merged = merged.unionByName(frame, allowMissingColumns=True)
         _write(merged, out / "rejected" / f"{entity}.parquet")
 
+    stats.extra["low_info_comments"] = {
+        "flagged": comments.filter("is_low_info").count(),
+        "of": comments.count(),
+        "by_reason": count_by(comments, "low_info_reasons"),
+        "note": "kept in comments.parquet with is_low_info = true; a comment can match several",
+    }
     stats.extra["outputs"] = {
         "questions": questions.count(),
         "answers": answers.count(),
