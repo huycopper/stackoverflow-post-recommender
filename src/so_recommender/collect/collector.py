@@ -398,5 +398,12 @@ class Collector:
         now = self._clock()
         if not force and self._last_save is not None and now - self._last_save < self.save_interval:
             return
-        self.state.save(self.state_path)
+        try:
+            self.state.save(self.state_path)
+        except PermissionError as err:
+            if force:
+                raise
+            # The file stayed locked by another program even after retrying (crashed the run of
+            # 14/11). Keep collecting: the state is in memory and the next save writes all of it.
+            log.warning("could not save state (%s); retrying at the next save", err)
         self._last_save = now

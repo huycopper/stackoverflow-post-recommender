@@ -12,7 +12,10 @@ from dataclasses import dataclass, field, fields
 from datetime import UTC, datetime
 from pathlib import Path
 
-REPLACE_RETRIES = 10  # about 11 s of waiting in total before giving up
+# How long to keep retrying when Windows refuses to replace the state file. 11 s was not enough
+# once the file reached 33 MB (run of 14/11/2026 crashed): wait up to 2 minutes.
+REPLACE_MAX_WAIT_SECONDS = 120.0
+REPLACE_MAX_DELAY_SECONDS = 5.0
 
 _ID_SETS = (
     "seed_ids",
@@ -101,15 +104,20 @@ class CollectorState:
         # Compact JSON: with ~100k ids the indented file was 13 MB.
         tmp.write_text(json.dumps(self.to_json(), separators=(",", ":")), encoding="utf-8")
         # On Windows the rename fails with "Access is denied" while another program (antivirus,
-        # search indexer) briefly holds the old file open. That crashed a run on 25/10: retry.
-        for attempt in range(REPLACE_RETRIES):
+        # search indexer) holds the old file open. That crashed runs on 25/10 and 14/11: retry,
+        # waiting longer each time.
+        waited = 0.0
+        delay = 0.2
+        while True:
             try:
                 os.replace(tmp, path)
                 return
             except PermissionError:
-                if attempt == REPLACE_RETRIES - 1:
+                if waited >= REPLACE_MAX_WAIT_SECONDS:
                     raise
-                sleep(0.2 * (attempt + 1))
+                sleep(delay)
+                waited += delay
+                delay = min(delay * 2, REPLACE_MAX_DELAY_SECONDS)
 
     @classmethod
     def load(cls, path: str | Path) -> CollectorState:

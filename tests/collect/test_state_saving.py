@@ -5,7 +5,11 @@ import os
 import pytest
 
 from so_recommender.collect import state as state_module
-from so_recommender.collect.state import REPLACE_RETRIES, CollectorState
+from so_recommender.collect.state import (
+    REPLACE_MAX_DELAY_SECONDS,
+    REPLACE_MAX_WAIT_SECONDS,
+    CollectorState,
+)
 
 from .test_collector import build_api, make_collector
 
@@ -27,15 +31,32 @@ def test_save_retries_while_the_file_is_held_open(tmp_path, monkeypatch):
     assert CollectorState.load(path).filter == "F"
 
 
-def test_save_gives_up_after_the_retries(tmp_path, monkeypatch):
-    def always_denied(src, dst):
-        raise PermissionError(5, "Access is denied")
+def always_denied(src, dst):
+    raise PermissionError(5, "Access is denied")
 
+
+def test_save_gives_up_after_waiting_about_two_minutes(tmp_path, monkeypatch):
     monkeypatch.setattr(state_module.os, "replace", always_denied)
     slept = []
     with pytest.raises(PermissionError):
         CollectorState().save(tmp_path / "state.json", sleep=slept.append)
-    assert len(slept) == REPLACE_RETRIES - 1
+    assert slept[:3] == [0.2, 0.4, 0.8]  # short waits first, then growing
+    assert max(slept) == REPLACE_MAX_DELAY_SECONDS
+    assert REPLACE_MAX_WAIT_SECONDS <= sum(slept) < REPLACE_MAX_WAIT_SECONDS + 6
+
+
+def test_collector_keeps_going_when_a_periodic_save_fails(tmp_path, clock, monkeypatch):
+    collector = make_collector(build_api(), clock, tmp_path)
+    collector.state.filter = "F"
+    collector._last_save = -1000.0  # the next save is due
+    real_save = collector.state.save
+    collector.state.save = lambda path: always_denied(None, path)
+    collector._save()  # periodic save: logged, not raised
+    with pytest.raises(PermissionError):
+        collector._save(force=True)  # the final save must not fail silently
+    collector.state.save = real_save
+    collector._save(force=True)
+    assert CollectorState.load(tmp_path / "state.json").filter == "F"
 
 
 def test_collector_saves_at_most_every_interval_but_always_at_the_end(tmp_path, clock):
