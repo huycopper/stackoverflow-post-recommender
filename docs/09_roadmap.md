@@ -44,7 +44,9 @@ Cập nhật lần cuối: **14/11/2026**. Ngày báo cáo tiến độ và báo
 - [ ] Gửi bản raw mới `data/exports/so_raw_jsonl_20261029_v2.zip` (557 MB, 200 trang seed, đã kiểm tra không chứa API key) cho Nguyễn Huy qua Drive (D15). Bản này chứa cả dữ liệu của bản gửi lúc 14:30. (Huy Copper)
 - [x] Sửa lỗi phân trang của bước `linked`: lật theo cửa sổ ngày tạo (`todate`) thay cho `page` (14/11, D16). (Huy Copper)
 - [ ] Chạy `repair` rồi `run` để lấy lại câu `linked` của 8.760 seed bị cắt ở 100 câu. Ước tính khoảng 20 nghìn request, tức khoảng 2 ngày quota (D16). (Huy Copper)
-- [ ] Sau đó tăng `seed_pages_per_tag` lên quá 200 và bật lại lịch 22:00 (D16). (Huy Copper)
+  - 14/11: đã chạy `repair` (8.760 seed vào lại hàng đợi), sao lưu state cũ ở `data/collect_state.backup_20261114_before_d16.json`. Lần `run` đầu tiên bắt đầu lúc 22:06, log ở `data/logs/collect_20261114_d16.log`.
+  - Đã bật lại lịch 22:00 để mỗi tối tự chạy tiếp, lần đầu vào 22:00 ngày 15/11. `seed_pages_per_tag` vẫn là 200, nên lịch chỉ lấy nốt phần lấy lại này, chưa thêm seed mới.
+- [ ] Sau đó tăng `seed_pages_per_tag` lên quá 200 (D16). (Huy Copper)
 - [ ] Báo cả nhóm về D16, vì nó thay thỏa thuận "chưa crawl lại" ngày 31/10. (Huy Copper)
 - [x] Xuất dữ liệu để khám phá: `data/flat/*.parquet` và `data/exports/explore_20261026.xlsx` (26/10). (Huy Copper)
 - [x] Gửi dữ liệu cho Nguyễn Huy qua Drive. (Huy Copper)
