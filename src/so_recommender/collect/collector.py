@@ -150,17 +150,44 @@ class Collector:
         # Seeds are popular questions with hundreds of linked questions each; 100 of them in
         # one request makes the API time out, so this step uses much smaller batches.
         for batch in chunks(pending, self.sample.linked_batch_size):
-            path = f"/questions/{';'.join(map(str, batch))}/linked"
-            for data in self._pages(
-                "questions_linked",
-                path,
-                {"sort": "activity"},
-                self.sample.linked_pages_per_batch,
-                step="linked",
-            ):
-                self._ingest_questions(data["items"])
+            self._linked_windows(batch)
             self.state.linked_done.update(batch)
             self._save()
+
+    def _linked_windows(self, batch: list[int]) -> None:
+        """Fetch every question linked to `batch`, newest first, one creation-date window at a time.
+
+        This endpoint ignores `page`: pages 2, 3... return page 1 again with has_more=true, so
+        before 14/11/2026 a batch got at most 100 linked questions (checked on the live API with
+        sort=activity and sort=creation). `todate` does work, so each request asks for the 100
+        newest questions created before the oldest one seen so far. The window ends one second
+        after that oldest date, so questions created in the same second are not skipped; the
+        overlap is removed by id. A window with nothing new ends the batch.
+        """
+        path = f"/questions/{';'.join(map(str, batch))}/linked"
+        seen: set[int] = set()
+        todate: int | None = None
+        for _ in range(self.sample.linked_pages_per_batch):
+            params: dict[str, Any] = {"sort": "creation", "order": "desc"}
+            if todate is not None:
+                params["todate"] = todate
+            data = self._fetch(
+                "questions_linked",
+                path,
+                {**params, "pagesize": self.pagesize, "filter": self._filter()},
+            )
+            items = data.get("items", [])
+            new = self._ingest_questions(items) - seen
+            seen |= new
+            if not data.get("has_more") or not new:
+                return
+            todate = min(int(q["creation_date"]) for q in items) + 1
+        truncated = self.state.truncated_batches
+        truncated["linked"] = truncated.get("linked", 0) + 1
+        self.state.truncated_ids.setdefault("linked", set()).update(batch)
+        log.warning(
+            "linked: window limit %d reached for %s", self.sample.linked_pages_per_batch, path[:60]
+        )
 
     def step_originals(self) -> None:
         for _ in range(self.sample.original_rounds):

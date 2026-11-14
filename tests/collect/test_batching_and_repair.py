@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from so_recommender.collect.collector import pack
 from so_recommender.collect.raw_store import RawStore
-from so_recommender.collect.repair import requeue_incomplete
+from so_recommender.collect.repair import requeue_capped_linked, requeue_incomplete
 from so_recommender.collect.state import CollectorState
 
 from .conftest import FakeApi, page
@@ -104,6 +104,32 @@ def test_repair_requeues_incomplete_parents(tmp_path):
     assert state.answer_comments_done == {20}
     assert state.answer_counts == {1: 2, 2: 1}
     assert state.answer_comment_counts == {10: 2, 20: 0}
+
+
+def linked_record(raw: RawStore, seeds: str, has_more: bool, *, old_paging: bool) -> None:
+    params = {"sort": "activity", "page": 1} if old_paging else {"sort": "creation"}
+    url = f"https://api.stackexchange.com/2.3/questions/{seeds}/linked?site=stackoverflow"
+    raw.write("questions_linked", url, params, page([{"question_id": 99}], has_more=has_more))
+
+
+def test_repair_requeues_seeds_with_capped_linked(tmp_path):
+    raw = RawStore(tmp_path)
+    linked_record(raw, "1;2", has_more=True, old_paging=True)  # cut at 100
+    linked_record(raw, "3;4", has_more=False, old_paging=True)  # complete
+    linked_record(raw, "5;6", has_more=True, old_paging=True)  # cut, but refetched below
+    linked_record(raw, "5;6", has_more=True, old_paging=False)
+    state = CollectorState(linked_done={1, 2, 3, 4, 5, 6})
+
+    stats = requeue_capped_linked(tmp_path, state)
+
+    assert state.linked_done == {3, 4, 5, 6}
+    assert stats == {
+        "seeds_with_capped_linked": 4,
+        "seeds_already_refetched": 2,
+        "seeds_requeued_for_linked": 2,
+    }
+    # running it again (seeds 1, 2 still pending) changes nothing
+    assert requeue_capped_linked(tmp_path, state)["seeds_requeued_for_linked"] == 0
 
 
 def test_state_round_trip_keeps_counts_and_truncated_ids(tmp_path):

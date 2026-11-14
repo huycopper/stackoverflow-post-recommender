@@ -1,6 +1,6 @@
 # 09. Kế hoạch
 
-Cập nhật lần cuối: **29/10/2026**. Ngày báo cáo tiến độ và báo cáo cuối **chưa có**. Khi có thì thêm vào đây và vào [02](02_course_requirements.md#mốc-thời-gian).
+Cập nhật lần cuối: **14/11/2026**. Ngày báo cáo tiến độ và báo cáo cuối **chưa có**. Khi có thì thêm vào đây và vào [02](02_course_requirements.md#mốc-thời-gian).
 
 Đánh dấu `[x]` khi xong, ghi tên người nhận sau mỗi mục.
 
@@ -42,6 +42,10 @@ Cập nhật lần cuối: **29/10/2026**. Ngày báo cáo tiến độ và báo
   - 74,5% câu hỏi có comment. Trong các câu trùng, 22.852 trên 29.941 câu (76%) có comment.
   - 57 batch `linked` chạm giới hạn 3 trang.
 - [ ] Gửi bản raw mới `data/exports/so_raw_jsonl_20261029_v2.zip` (557 MB, 200 trang seed, đã kiểm tra không chứa API key) cho Nguyễn Huy qua Drive (D15). Bản này chứa cả dữ liệu của bản gửi lúc 14:30. (Huy Copper)
+- [x] Sửa lỗi phân trang của bước `linked`: lật theo cửa sổ ngày tạo (`todate`) thay cho `page` (14/11, D16). (Huy Copper)
+- [ ] Chạy `repair` rồi `run` để lấy lại câu `linked` của 8.760 seed bị cắt ở 100 câu. Ước tính khoảng 20 nghìn request, tức khoảng 2 ngày quota (D16). (Huy Copper)
+- [ ] Sau đó tăng `seed_pages_per_tag` lên quá 200 và bật lại lịch 22:00 (D16). (Huy Copper)
+- [ ] Báo cả nhóm về D16, vì nó thay thỏa thuận "chưa crawl lại" ngày 31/10. (Huy Copper)
 - [x] Xuất dữ liệu để khám phá: `data/flat/*.parquet` và `data/exports/explore_20261026.xlsx` (26/10). (Huy Copper)
 - [x] Gửi dữ liệu cho Nguyễn Huy qua Drive. (Huy Copper)
   - 26/10: `data/flat/` (4 bảng Parquet) và file Excel.

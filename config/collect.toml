@@ -23,7 +23,10 @@ seed_sort = "votes"
 # 2. Linked: questions that link to the seeds; the ones closed as duplicates give labelled pairs.
 # Seeds have hundreds of linked questions each: 100 seeds per request timed out, so keep it small.
 linked_batch_size = 10
-linked_pages_per_batch = 3
+# The endpoint ignores `page`, so each request is a creation-date window of 100 (`todate`) and
+# every window is fetched until none is left. This is only a safety net (hits are logged in
+# state.truncated_ids). Until 14/11/2026 it was 3 pages that were all the same page.
+linked_pages_per_batch = 50
 # 3. Background: ordinary questions of the tag, used as non-relevant candidates.
 background_pages_per_tag = 1
 background_sort = "activity"

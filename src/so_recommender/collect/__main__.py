@@ -20,7 +20,7 @@ from .collector import STEPS, Collector
 from .config import load_config, load_dotenv
 from .lock import AlreadyRunning, exclusive_lock
 from .raw_store import RawStore
-from .repair import requeue_incomplete
+from .repair import requeue_capped_linked, requeue_incomplete
 from .state import CollectorState
 from .summary import summarize
 
@@ -48,8 +48,8 @@ def main(argv: list[str] | None = None) -> int:
 
     sub.add_parser(
         "repair",
-        help="re-queue questions/answers whose answers or comments are incomplete in raw data; "
-        "then run again to fetch them",
+        help="re-queue seeds whose linked questions were cut at 100, and questions/answers "
+        "whose answers or comments are incomplete in raw data; then run again to fetch them",
     )
 
     args = parser.parse_args(argv)
@@ -77,7 +77,8 @@ def main(argv: list[str] | None = None) -> int:
 
     if args.command == "repair":
         state = CollectorState.load(config.paths.state_file)
-        stats = requeue_incomplete(config.paths.raw_dir, state)
+        stats = requeue_capped_linked(config.paths.raw_dir, state)
+        stats.update(requeue_incomplete(config.paths.raw_dir, state))
         state.save(config.paths.state_file)
         print(json.dumps(stats, indent=2))
         print("Now run the same config with `run` to fetch what was re-queued.")

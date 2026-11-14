@@ -53,9 +53,19 @@ Lấy quan hệ trùng (đã kiểm tra với API thật ngày 23/10/2026):
 
 - Câu hỏi bị đóng vì trùng có `closed_reason = "Duplicate"`.
 - `closed_details.original_questions` liệt kê các câu gốc. Ví dụ: câu 79904105 có câu gốc là 38987.
-- `/questions/{id}/linked` của một câu hỏi phổ biến có khoảng 16–18% là câu đã đóng vì trùng. Câu 38987 có 453 câu liên kết tới.
+- `/questions/{id}/linked` của một câu hỏi phổ biến có khoảng 16–18% là câu đã đóng vì trùng. Với câu 38987, `filter=total` báo 453 câu liên kết tới, nhưng API chỉ trả về được 374 câu, trong đó 58 câu trùng (kiểm tra ngày 14/11/2026). Con số `total` của endpoint này không đổi dù thêm `todate` hay `fromdate`, nên không dùng được để đối chiếu. Phần chênh lệch nhiều khả năng là các câu đã bị xóa.
 
 Comment và câu trả lời được lấy qua endpoint riêng, **không** nhúng vào filter của `/questions`. Lý do: cách này chắc chắn lấy đủ và có phân trang rõ ràng. Câu hỏi có `answer_count = 0` hoặc `comment_count = 0` được bỏ qua để tiết kiệm request.
+
+### Endpoint `linked` bỏ qua `page` (tìm ra ngày 31/10/2026, sửa ngày 14/11/2026)
+
+Nguyễn Huy phát hiện `/questions/{ids}/linked` **bỏ qua tham số `page`**: trang 2, 3 trả lại y hệt trang 1, và `has_more` vẫn là `true`. Ngày 14/11/2026 đã thử lại với API thật: lỗi xảy ra cả khi dùng `sort=activity` lẫn `sort=creation`.
+
+- Hệ quả: đến bản 200 trang seed, mỗi batch 10 seed chỉ lấy được tối đa 100 câu liên kết. Có **876 trên 2.000 batch (8.760 seed) bị cắt** như vậy. Các seed này lại là những câu kinh điển nhất, nhiều câu trùng nhất.
+- `todate` (và `max`) thì vẫn hoạt động. Vì vậy bước `linked` giờ dùng `sort=creation&order=desc` và lấy theo **cửa sổ ngày tạo**: mỗi request lấy 100 câu mới nhất được tạo trước câu cũ nhất đã thấy. Cửa sổ kết thúc sau ngày tạo của câu cũ nhất 1 giây, để không bỏ sót các câu tạo cùng một giây. Phần chồng lấn được bỏ theo ID.
+- Một batch dừng khi `has_more = false`, hoặc khi một cửa sổ không đem về câu nào mới. `linked_pages_per_batch` (50) chỉ là lưới an toàn; chạm giới hạn này thì ID seed được ghi vào `truncated_ids["linked"]`.
+- Kiểm tra với câu 38987: 4 cửa sổ lấy được 374 câu, đi ngược về tới năm 2008, và có đủ 100 câu đứng đầu theo `activity` cũng như theo `votes`.
+- Record raw lấy theo cách mới **không có** tham số `page` (từ cửa sổ thứ hai thì có thêm `todate`). Nhờ đó `repair` phân biệt được batch nào đã được lấy lại.
 
 ## Quy tắc khi gọi API (đã cài trong `client.py`)
 
@@ -77,7 +87,7 @@ Ngày 23/10/2026, vài request thử gọi `/questions/{ids}/linked` liên tiế
 ## Chiến lược lấy mẫu (đã cài, chỉnh trong `config/collect.toml`)
 
 1. **Seed:** `seed_pages_per_tag` trang câu hỏi được vote cao nhất của mỗi tag. Phần lớn là câu "kinh điển", có nhiều câu khác trùng với nó.
-2. **Linked:** các câu hỏi liên kết tới seed, tối đa `linked_pages_per_batch` trang cho mỗi batch `linked_batch_size` seed (mặc định 10). Batch nhỏ vì mỗi seed có hàng trăm câu liên kết: gửi 100 seed trong một request thì API bị timeout, rồi báo vi phạm backoff. Câu nào đã đóng vì trùng thì cho ra một hoặc nhiều cặp (câu trùng, câu gốc). Đây là các **query** có nhãn.
+2. **Linked:** **mọi** câu hỏi liên kết tới seed, lấy theo cửa sổ ngày tạo (xem mục [Endpoint `linked` bỏ qua `page`](#endpoint-linked-bỏ-qua-page-tìm-ra-ngày-31102026-sửa-ngày-14112026)), mỗi batch `linked_batch_size` seed (mặc định 10). Batch nhỏ vì mỗi seed có hàng trăm câu liên kết: gửi 100 seed trong một request thì API bị timeout, rồi báo vi phạm backoff. Câu nào đã đóng vì trùng thì cho ra một hoặc nhiều cặp (câu trùng, câu gốc). Đây là các **query** có nhãn.
 3. **Background:** `background_pages_per_tag` trang câu hỏi thường cùng tag (`sort=activity`). Dùng làm câu không liên quan, để kho tìm kiếm thực tế hơn.
 4. **Originals:** lấy thêm những câu gốc chưa có, tối đa `original_rounds` vòng để xử lý chuỗi trùng. Câu đã bị xóa được ghi nhận vào `unavailable_question_ids` để không hỏi lại.
 5. **Answers và comments** của mọi câu hỏi đã lấy, và comment của mọi câu trả lời.

@@ -26,7 +26,8 @@ class SampleSettings:
     seed_pages_per_tag: int = 1
     seed_sort: str = "votes"
     linked_batch_size: int = 10
-    linked_pages_per_batch: int = 3
+    # Linked: requests per batch, each a window of up to 100 questions; only a safety net.
+    linked_pages_per_batch: int = 50
     background_pages_per_tag: int = 1
     background_sort: str = "activity"
     original_rounds: int = 3

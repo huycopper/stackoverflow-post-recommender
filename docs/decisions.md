@@ -78,6 +78,16 @@ Mỗi quyết định ghi: **ngày, quyết định, lý do, người chốt**. 
 - **Lý do:** Nguyễn Huy muốn lấy đủ mọi trường để làm EDA, rồi mới tách theo schema Hung cần ("làm sạch các thứ xong mới extract mấy cái của hùng"). Bản phẳng đã tự khử trùng theo ID, trong khi đây lại là một bước làm sạch cần ghi số liệu ([05](05_cleaning_pipeline.md), bước 3).
 - **Người chốt:** Nguyễn Huy và Huy Copper (Messenger, 29/10/2026).
 
+### D16. Sửa lỗi phân trang của `linked` rồi thu thập tiếp (14/11/2026)
+- **Quyết định:** thu thập tiếp **song song** với việc làm sạch. Nguyễn Huy dựng pipeline làm sạch trên bản 100 trang seed đã gửi, khi có dữ liệu mới thì chạy lại pipeline. Trước khi lấy thêm, sửa bước `linked`, rồi theo thứ tự:
+  1. Bước `linked` chuyển từ lật `page` sang lật theo cửa sổ ngày tạo (`sort=creation` + `todate`), như mô tả ở [03](03_data_source.md#endpoint-linked-bỏ-qua-page-tìm-ra-ngày-31102026-sửa-ngày-14112026).
+  2. Chạy `repair` để đưa lại vào hàng đợi 8.760 seed (876 batch) có câu `linked` bị cắt ở 100 câu, rồi `run` để lấy phần còn thiếu cùng câu gốc, câu trả lời và comment của chúng.
+  3. Sau đó mới tăng `seed_pages_per_tag` lên quá 200 và bật lại lịch 22:00.
+- **Lý do:** từ 31/10 nhóm thống nhất chưa crawl lại, chỉ sửa khi cần thêm nhãn. Nay Huy Copper muốn lấy thêm dữ liệu. Nếu chỉ tăng số trang mà không sửa thì các batch mới vẫn bị cắt ở 100 câu, và mỗi batch phí 2 request cho trang 2, 3. Bước 2 cho nhiều nhãn nhất trên mỗi request, vì seed ở các trang đầu là câu kinh điển nhất.
+  - Ước tính bằng cách lấy mẫu 30 batch với `filter=total` (14/11): mỗi batch có khoảng 340 câu liên kết theo `total`. Con số `total` cao hơn số API thật sự trả về khoảng 17% (câu 38987: 453 so với 374). Vậy cả 876 batch có khoảng **250 nghìn câu liên kết**, trong đó khoảng 160 nghìn câu chưa có, tốn khoảng 3.000 request.
+  - Tính cả câu trả lời và comment (khoảng 0,11 request mỗi câu hỏi, theo lần chạy D14) thì tổng cộng cỡ **20 nghìn request, khoảng 2 ngày quota**. Với tỉ lệ khoảng 15% câu trùng như câu 38987, có thể được thêm cỡ 20 nghìn câu trùng.
+- **Người chốt:** Huy Copper. Cần báo lại cả nhóm, vì quyết định này thay thỏa thuận "chưa crawl lại" ngày 31/10.
+
 ## Câu hỏi mở
 
 | # | Câu hỏi | Ai chốt | Trạng thái |

@@ -178,6 +178,66 @@ def test_linked_uses_its_own_small_batches(tmp_path, clock):
     assert collector.state.linked_done == {1, 2}
 
 
+def linked_state() -> CollectorState:
+    return CollectorState(filter="F", seed_ids={1, 2})
+
+
+def windowed_linked(ids_newest_first: list[int], window: int = 2):
+    """Fake /linked that ignores `page` (like the real API) but honours `todate`."""
+
+    def handler(path, query):
+        todate = int(query["todate"]) if "todate" in query else None
+        older = [
+            question(i)
+            for i in ids_newest_first
+            if todate is None or question(i)["creation_date"] < todate
+        ]
+        return page(older[:window], has_more=len(older) > window)
+
+    return handler
+
+
+def test_linked_pages_by_creation_date_windows(tmp_path, clock):
+    api = FakeApi()
+    api.route(
+        lambda p, q: p == "/questions/1;2/linked",
+        windowed_linked([16, 15, 14, 13, 12], window=3),
+    )
+    collector = make_collector(api, clock, tmp_path, state=linked_state())
+    assert collector.run(["linked"]) is True
+
+    assert collector.state.fetched_question_ids == {12, 13, 14, 15, 16}
+    assert collector.state.linked_done == {1, 2}
+    assert all("page" not in q for _, q in api.calls)
+    assert all(q["sort"] == "creation" and q["order"] == "desc" for _, q in api.calls)
+    # The next window ends one second after the oldest question seen (14), so questions created
+    # in that same second are not skipped; 14 comes back once and is not counted as new.
+    assert [q.get("todate") for _, q in api.calls] == [None, "1700000015"]
+    assert collector.state.truncated_ids == {}
+
+
+def test_linked_stops_when_a_window_brings_nothing_new(tmp_path, clock):
+    api = FakeApi()
+    # The old behaviour of `page`: same items and has_more=true forever.
+    api.route(
+        lambda p, q: p == "/questions/1;2/linked", page([question(10), question(11)], has_more=True)
+    )
+    collector = make_collector(api, clock, tmp_path, state=linked_state())
+    assert collector.run(["linked"]) is True
+    assert len(api.calls) == 2
+    assert collector.state.linked_done == {1, 2}
+
+
+def test_linked_window_limit_is_logged(tmp_path, clock):
+    api = FakeApi()
+    api.route(lambda p, q: p == "/questions/1;2/linked", windowed_linked([16, 15, 14, 13, 12]))
+    collector = make_collector(api, clock, tmp_path, state=linked_state(), linked_pages_per_batch=2)
+    collector.run(["linked"])
+    assert collector.state.fetched_question_ids == {14, 15, 16}  # windows 16,15 then 15,14
+    assert collector.state.truncated_ids == {"linked": {1, 2}}
+    assert collector.state.linked_done == {1, 2}
+
+
 def test_unknown_step_is_rejected(tmp_path, clock):
     with pytest.raises(ValueError):
         make_collector(build_api(), clock, tmp_path).run(["seed", "typo"])

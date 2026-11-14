@@ -75,6 +75,7 @@ uv run python -m so_recommender.collect summary --out reports/collect_summary.js
   uv run python -m so_recommender.collect repair
   uv run python -m so_recommender.collect run --steps answers question_comments answer_comments
   ```
+- `repair` cũng đưa lại vào hàng đợi các seed có câu `linked` bị cắt ở 100 câu, do lỗi phân trang trước ngày 14/11/2026 (D16). Sau đó chạy `run` đủ các bước (không có `--steps`) để lấy các câu liên kết còn thiếu, câu gốc, câu trả lời và comment của chúng. Chạy `repair` nhiều lần cũng không sao: seed nào đã được lấy lại thì không bị đưa vào hàng đợi lần nữa.
 - Khi gần hết quota, bị API throttle hoặc bị ngắt (Ctrl+C), chương trình **tự dừng và lưu tiến độ**. Chạy lại đúng lệnh cũ để tiếp tục.
 - Mỗi lúc chỉ được có **một** lần chạy dùng cùng một file state. Nếu đang có lần chạy khác thì lệnh mới dừng ngay, trả mã 3 (khóa nằm ở `data/collect_state.lock`).
 - `--log-file data/logs/x.log` ghi log ra file thay vì ra màn hình.
