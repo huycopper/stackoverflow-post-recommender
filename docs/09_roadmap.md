@@ -46,6 +46,9 @@ Cập nhật lần cuối: **14/11/2026**. Ngày báo cáo tiến độ và báo
 - [ ] Chạy `repair` rồi `run` để lấy lại câu `linked` của 8.760 seed bị cắt ở 100 câu. Ước tính khoảng 20 nghìn request, tức khoảng 2 ngày quota (D16). (Huy Copper)
   - 14/11: đã chạy `repair` (8.760 seed vào lại hàng đợi), sao lưu state cũ ở `data/collect_state.backup_20261114_before_d16.json`. Lần `run` đầu tiên bắt đầu lúc 22:06, log ở `data/logs/collect_20261114_d16.log`.
   - Đã bật lại lịch 22:00 để mỗi tối tự chạy tiếp, lần đầu vào 22:00 ngày 15/11. `seed_pages_per_tag` vẫn là 200, nên lịch chỉ lấy nốt phần lấy lại này, chưa thêm seed mới.
+  - 15/11: lần chạy đầu dừng lúc 00:32 vì Windows khóa file state (33 MB). Đã sửa (`abb390e`) và chạy tiếp từ 00:33 tới 01:42 thì hết quota, log ở `data/logs/collect_20261115_d16b.log`. Cả đêm tốn khoảng 9.900 request.
+  - Phần `linked` của cả 8.760 seed đã xong, không batch nào chạm giới hạn 50 cửa sổ. Hiện có **275.903 câu hỏi** (thêm 123.984) và **69.773 cặp trùng** (thêm 35.120, nhiều hơn mức ước tính 20 nghìn). Câu gốc, câu trả lời và comment của câu hỏi đã đủ.
+  - Còn comment của khoảng 72.700 câu trả lời (khoảng 2.000 request) và bước tag synonyms. Lịch 22:00 ngày 15/11 sẽ chạy nốt trong một tối.
 - [ ] Sau đó tăng `seed_pages_per_tag` lên quá 200 (D16). (Huy Copper)
 - [ ] Báo cả nhóm về D16, vì nó thay thỏa thuận "chưa crawl lại" ngày 31/10. (Huy Copper)
 - [x] Xuất dữ liệu để khám phá: `data/flat/*.parquet` và `data/exports/explore_20261026.xlsx` (26/10). (Huy Copper)
