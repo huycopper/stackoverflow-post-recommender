@@ -1,6 +1,6 @@
 # 09. Kế hoạch
 
-Cập nhật lần cuối: **14/11/2026**. Ngày báo cáo tiến độ và báo cáo cuối **chưa có**. Khi có thì thêm vào đây và vào [02](02_course_requirements.md#mốc-thời-gian).
+Cập nhật lần cuối: **16/11/2026**. Ngày báo cáo tiến độ và báo cáo cuối **chưa có**. Khi có thì thêm vào đây và vào [02](02_course_requirements.md#mốc-thời-gian).
 
 Đánh dấu `[x]` khi xong, ghi tên người nhận sau mỗi mục.
 
@@ -43,12 +43,17 @@ Cập nhật lần cuối: **14/11/2026**. Ngày báo cáo tiến độ và báo
   - 57 batch `linked` chạm giới hạn 3 trang.
 - [ ] Gửi bản raw mới `data/exports/so_raw_jsonl_20261029_v2.zip` (557 MB, 200 trang seed, đã kiểm tra không chứa API key) cho Nguyễn Huy qua Drive (D15). Bản này chứa cả dữ liệu của bản gửi lúc 14:30. (Huy Copper)
 - [x] Sửa lỗi phân trang của bước `linked`: lật theo cửa sổ ngày tạo (`todate`) thay cho `page` (14/11, D16). (Huy Copper)
-- [ ] Chạy `repair` rồi `run` để lấy lại câu `linked` của 8.760 seed bị cắt ở 100 câu. Ước tính khoảng 20 nghìn request, tức khoảng 2 ngày quota (D16). (Huy Copper)
+- [x] Chạy `repair` rồi `run` để lấy lại câu `linked` của 8.760 seed bị cắt ở 100 câu. Ước tính khoảng 20 nghìn request, tức khoảng 2 ngày quota (D16). Thực tế tốn khoảng 12.250 request trong 2 tối (14–15/11). (Huy Copper)
   - 14/11: đã chạy `repair` (8.760 seed vào lại hàng đợi), sao lưu state cũ ở `data/collect_state.backup_20261114_before_d16.json`. Lần `run` đầu tiên bắt đầu lúc 22:06, log ở `data/logs/collect_20261114_d16.log`.
   - Đã bật lại lịch 22:00 để mỗi tối tự chạy tiếp, lần đầu vào 22:00 ngày 15/11. `seed_pages_per_tag` vẫn là 200, nên lịch chỉ lấy nốt phần lấy lại này, chưa thêm seed mới.
   - 15/11: lần chạy đầu dừng lúc 00:32 vì Windows khóa file state (33 MB). Đã sửa (`abb390e`) và chạy tiếp từ 00:33 tới 01:42 thì hết quota, log ở `data/logs/collect_20261115_d16b.log`. Cả đêm tốn khoảng 9.900 request.
   - Phần `linked` của cả 8.760 seed đã xong, không batch nào chạm giới hạn 50 cửa sổ. Hiện có **275.903 câu hỏi** (thêm 123.984) và **69.773 cặp trùng** (thêm 35.120, nhiều hơn mức ước tính 20 nghìn). Câu gốc, câu trả lời và comment của câu hỏi đã đủ.
-  - Còn comment của khoảng 72.700 câu trả lời (khoảng 2.000 request) và bước tag synonyms. Lịch 22:00 ngày 15/11 sẽ chạy nốt trong một tối.
+  - Lịch 22:00 ngày 15/11 chạy nốt comment của câu trả lời và tag synonyms, xong lúc 22:41 (2.348 request, còn dư 7.652 quota). Log ở `data/logs/collect_20261115_2200.log`, tóm tắt ở `data/exports/full_summary_20261116.json`, dữ liệu 839 MB trong `data/raw/`.
+  - Kết quả cuối: **275.903 câu hỏi**, trong đó 62.135 câu bị đóng vì trùng, ra **69.773 cặp trùng**. Thiếu 12 câu gốc vì đã bị xóa.
+  - 587.291 câu trả lời: thiếu 9 câu so với `answer_count`, ở 17 câu hỏi.
+  - Comment: 836.766 comment của câu trả lời (đủ). 747.680 trên 752.317 comment của câu hỏi, vì có 1.184 câu API không trả comment. 41.855 comment làm lộ đáp án, cần lọc.
+  - 76,4% câu hỏi có comment. Trong các câu trùng, 48.317 trên 62.135 câu (78%) có comment.
+  - Lịch 22:00 vẫn bật, nhưng với 200 trang seed thì không còn gì để lấy.
 - [ ] Sau đó tăng `seed_pages_per_tag` lên quá 200 (D16). (Huy Copper)
 - [ ] Báo cả nhóm về D16, vì nó thay thỏa thuận "chưa crawl lại" ngày 31/10. (Huy Copper)
 - [x] Xuất dữ liệu để khám phá: `data/flat/*.parquet` và `data/exports/explore_20261026.xlsx` (26/10). (Huy Copper)
