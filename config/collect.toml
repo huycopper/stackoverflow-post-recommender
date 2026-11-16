@@ -18,7 +18,9 @@ tags = ["python"]
 # on 25/10 to collect as much as possible; the daily scheduled run continues until done.
 # 100 pages gave 93,704 questions for 13,157 requests (26/10). Raised to 200 on 29/10 for a
 # margin in case cleaning drops many rows (~1.5 days of quota).
-seed_pages_per_tag = 200
+# 200 pages with the linked fix (D16) gave 275,903 questions and 69,773 duplicate pairs (15/11).
+# Raised to 300 on 16/11; seeds are sorted by votes, so later pages bring fewer duplicates.
+seed_pages_per_tag = 300
 seed_sort = "votes"
 # 2. Linked: questions that link to the seeds; the ones closed as duplicates give labelled pairs.
 # Seeds have hundreds of linked questions each: 100 seeds per request timed out, so keep it small.

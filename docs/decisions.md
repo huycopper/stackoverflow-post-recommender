@@ -87,6 +87,7 @@ Mỗi quyết định ghi: **ngày, quyết định, lý do, người chốt**. 
   - Ước tính bằng cách lấy mẫu 30 batch với `filter=total` (14/11): mỗi batch có khoảng 340 câu liên kết theo `total`. Con số `total` cao hơn số API thật sự trả về khoảng 17% (câu 38987: 453 so với 374). Vậy cả 876 batch có khoảng **250 nghìn câu liên kết**, trong đó khoảng 160 nghìn câu chưa có, tốn khoảng 3.000 request.
   - Tính cả câu trả lời và comment (khoảng 0,11 request mỗi câu hỏi, theo lần chạy D14) thì tổng cộng cỡ **20 nghìn request, khoảng 2 ngày quota**. Với tỉ lệ khoảng 15% câu trùng như câu 38987, có thể được thêm cỡ 20 nghìn câu trùng.
 - **Người chốt:** Huy Copper. Cần báo lại cả nhóm, vì quyết định này thay thỏa thuận "chưa crawl lại" ngày 31/10.
+- **Kết quả (16/11/2026):** bước 2 xong sau 2 tối (14–15/11), tốn khoảng 12.250 request, ít hơn ước tính. Được **275.903 câu hỏi** và **69.773 cặp trùng** (thêm 35.120, nhiều hơn ước tính). Không batch nào chạm giới hạn 50 cửa sổ. Bước 3: ngày 16/11 Huy Copper chốt tăng `seed_pages_per_tag` lên **300**, lịch 22:00 lấy tiếp.
 
 ## Câu hỏi mở
 
@@ -94,7 +95,7 @@ Mỗi quyết định ghi: **ngày, quyết định, lý do, người chốt**. 
 |---|---|---|---|
 | Q1 | Báo TA việc đổi nguồn sang Stack Overflow, Stack Overflow có tính là "social media" không | ? | Chưa hỏi lại |
 | Q2 | Lưu trữ: Python + Parquet/SQL, hay lakehouse/Spark | Nguyễn Huy | Đang cân nhắc. Đề xuất ban đầu là Python ([06](06_architecture.md#lưu-trữ)). Ngày 29/10 Nguyễn Huy nghiêng về Spark: lấy hết dữ liệu rồi dùng Spark làm sạch, đến lúc train mà nhiều quá thì cắt bớt |
-| Q3 | Phạm vi tag: `python`, hay thêm `pandas`, hay tag khác | ETL | Chỉ `python`. 10 trang seed (24/10), rồi tăng lên 100 trang (25/10, D10), rồi 200 trang (29/10, D14). Muốn thêm tag thì thêm vào `config/collect.toml`, lịch hằng ngày sẽ lấy tiếp |
+| Q3 | Phạm vi tag: `python`, hay thêm `pandas`, hay tag khác | ETL | Chỉ `python`. 10 trang seed (24/10), rồi tăng lên 100 trang (25/10, D10), rồi 200 trang (29/10, D14), rồi 300 trang (16/11, D16). Muốn thêm tag thì thêm vào `config/collect.toml`, lịch hằng ngày sẽ lấy tiếp |
 | Q4 | Data contract lên 1.0 | ETL + Hung | Hung đã gửi định dạng (D9). Còn chờ Hung trả lời các trường bổ sung và cách lưu nhãn ([04](04_data_contract.md#câu-hỏi-mở-cần-chốt-với-bên-model)) |
 | Q5 | Ai làm phần "Training + viết báo cáo" | Nam, Hoàng | Chưa chọn |
 | Q6 | Có fine-tune model không | Hung | Chưa chốt ([07](07_modeling_eval.md)) |

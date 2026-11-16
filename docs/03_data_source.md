@@ -104,6 +104,7 @@ Số liệu thật: lần chạy 24–25/10 với 10 trang seed (1.000 seed) t�
 Hung chưa chốt cần bao nhiêu dữ liệu, nên tạm thời nhóm **thu thập càng nhiều càng tốt** (D10):
 
 - `seed_pages_per_tag = 100` (10.000 seed). Mỗi ngày bộ thu thập chạy tới khi gần hết quota thì dừng, hôm sau chạy tiếp. Dự kiến mất khoảng 3–4 ngày, được khoảng 100 nghìn câu hỏi và khoảng 600 MB raw.
+- Sau đó tăng lên 200 trang (29/10, D14), rồi 300 trang (16/11, D16).
 - Các trang seed càng về sau thì câu hỏi càng ít "kinh điển", nên mỗi seed cho ít câu trùng hơn.
 - Việc làm sạch **chưa làm**. Huy Copper và Nguyễn Huy sẽ xem dữ liệu, tìm insight trước, rồi mới thống nhất cần xử lý những gì.
 

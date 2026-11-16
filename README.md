@@ -83,7 +83,7 @@ uv run python -m so_recommender.collect summary --out reports/collect_summary.js
 
 ### Chạy tự động mỗi ngày (Windows)
 
-Trên máy Huy Copper có một lịch Task Scheduler tên **"SO Recommender - daily collect"**. Lịch này chạy [scripts/collect_daily.ps1](scripts/collect_daily.ps1) lúc **22:00 mỗi ngày**, và chạy bù nếu lúc đó máy đang tắt. **Từ 29/10/2026 lịch đang tắt (Disabled)** vì đã thu thập xong 200 trang seed (D14). Muốn bật lại: `Enable-ScheduledTask -TaskName "SO Recommender - daily collect"`. Log ghi ở `data/logs/collect_YYYYMMDD_HHMM.log`. Mã thoát của script: 0 là đã lấy xong hết, 2 là tạm dừng vì quota (hôm sau chạy tiếp), 3 là đang có lần chạy khác.
+Trên máy Huy Copper có một lịch Task Scheduler tên **"SO Recommender - daily collect"**. Lịch này chạy [scripts/collect_daily.ps1](scripts/collect_daily.ps1) lúc **22:00 mỗi ngày**, và chạy bù nếu lúc đó máy đang tắt. Lịch từng tắt từ 29/10/2026, sau khi thu thập xong 200 trang seed (D14). **Từ 14/11/2026 lịch bật lại (D16)**, từ 16/11 đang lấy tới 300 trang seed. Muốn bật lại sau khi đã tắt: `Enable-ScheduledTask -TaskName "SO Recommender - daily collect"`. Log ghi ở `data/logs/collect_YYYYMMDD_HHMM.log`. Mã thoát của script: 0 là đã lấy xong hết, 2 là tạm dừng vì quota (hôm sau chạy tiếp), 3 là đang có lần chạy khác.
 
 ```powershell
 Get-ScheduledTask -TaskName "SO Recommender - daily collect" | Get-ScheduledTaskInfo   # lần chạy gần nhất / tiếp theo
