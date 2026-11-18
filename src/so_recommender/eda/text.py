@@ -28,8 +28,13 @@ def tfidf(texts: pd.Series, max_features: int = 50_000):
 def svd_kmeans(
     matrix, vectorizer, ks: range, chosen_k: int, seed: int = 42
 ) -> tuple[np.ndarray, np.ndarray, dict[str, Any]]:
-    """2-D SVD projection, k-means inertia per k (elbow), and the chosen clustering."""
-    reduced = TruncatedSVD(n_components=100, random_state=seed).fit_transform(matrix)
+    """2-D SVD projection, k-means inertia per k (elbow), and the chosen clustering.
+
+    The info dict also says how much of the variance the 100 and the 2 components keep, because
+    a 2-D picture of a 13,000-term matrix shows only a sliver of it.
+    """
+    svd100 = TruncatedSVD(n_components=100, random_state=seed)
+    reduced = svd100.fit_transform(matrix)
     reduced /= np.linalg.norm(reduced, axis=1, keepdims=True) + 1e-12
     inertia = {}
     for k in ks:
@@ -48,5 +53,14 @@ def svd_kmeans(
                 "top_terms": terms[np.argsort(centroid)[::-1][:8]].tolist(),
             }
         )
-    two_d = TruncatedSVD(n_components=2, random_state=seed).fit_transform(matrix)
-    return two_d, model.labels_, {"inertia_by_k": inertia, "k": chosen_k, "clusters": clusters}
+    svd2 = TruncatedSVD(n_components=2, random_state=seed)
+    two_d = svd2.fit_transform(matrix)
+    info = {
+        "inertia_by_k": inertia,
+        "k": chosen_k,
+        "clusters": clusters,
+        "tfidf_shape": [int(matrix.shape[0]), int(matrix.shape[1])],
+        "svd_100_explained_variance": round(float(svd100.explained_variance_ratio_.sum()), 4),
+        "svd_2d_explained_variance": round(float(svd2.explained_variance_ratio_.sum()), 4),
+    }
+    return two_d, model.labels_, info

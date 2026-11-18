@@ -57,6 +57,12 @@ def apply() -> None:
     )
 
 
+def footnote(fig, text: str) -> None:
+    """A note under the figure (what is sampled, what a number means). Numbers in it come from
+    the data of the run, so it stays true when the data grows."""
+    fig.text(0.01, -0.04, text, ha="left", va="top", fontsize=8.5, color=INK_2, wrap=True)
+
+
 def save(fig, path: Path) -> str:
     path.parent.mkdir(parents=True, exist_ok=True)
     fig.savefig(path, dpi=150, bbox_inches="tight")

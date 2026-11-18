@@ -14,7 +14,7 @@ from typing import Any
 import numpy as np
 import pandas as pd
 
-from . import style
+from . import cleaning, style
 from .figures import (
     box_by_role,
     correlation_heatmap,
@@ -73,7 +73,7 @@ def load(clean: Path) -> dict[str, pd.DataFrame]:
     q["n_tags"] = q["tags"].map(len)
     a = _read(clean, "answers", ["answer_id", "question_id", "body_text", "score", "is_accepted"])
     a["body_words"] = a["body_text"].map(word_count)
-    c = _read(clean, "comments", ["comment_id", "post_type", "question_id", "text", "score"])
+    c = _read(clean, "comments")
     c["words"] = c["text"].map(word_count)
     return {"questions": q, "answers": a, "comments": c}
 
@@ -93,7 +93,13 @@ def _shares(q: pd.DataFrame) -> dict[str, Any]:
     return out
 
 
-def run_eda(clean: str | Path, out: str | Path, seed: int = 42, sample: int = 20_000) -> dict:
+def run_eda(
+    clean: str | Path,
+    out: str | Path,
+    seed: int = 42,
+    sample: int = 20_000,
+    stats_file: str | Path | None = None,
+) -> dict:
     clean, out = Path(clean), Path(out)
     figures = out / "figures"
     style.apply()
@@ -132,7 +138,22 @@ def run_eda(clean: str | Path, out: str | Path, seed: int = 42, sample: int = 20
     rng = np.random.default_rng(seed)
     sample_idx = rng.choice(len(q), size=min(sample, len(q)), replace=False)
     qs = q.iloc[sample_idx]
-    figs.append(scatter_score_views(qs, ROLES, figures / "fig05_score_vs_views.png"))
+    rho_views = float(q[["score", "view_count"]].corr(method="spearman").iloc[0, 1])
+    report["score_views"] = {
+        "spearman_full": round(rho_views, 3),
+        "scatter_sample": len(qs),
+        "questions_with_one_view": int((q["view_count"] == 1).sum()),
+    }
+    figs.append(
+        scatter_score_views(
+            qs,
+            ROLES,
+            figures / "fig05_score_vs_views.png",
+            n_total=len(q),
+            rho=rho_views,
+            n_one_view=report["score_views"]["questions_with_one_view"],
+        )
+    )
     figs.append(
         scatter_matrix(
             qs.sample(min(3000, len(qs)), random_state=seed),
@@ -148,8 +169,51 @@ def run_eda(clean: str | Path, out: str | Path, seed: int = 42, sample: int = 20
     log.info("SVD and k-means on %d questions", len(qs))
     matrix, vectorizer = tfidf(qs["title"] + "\n" + qs["body_text"])
     two_d, _, report["kmeans"] = svd_kmeans(matrix, vectorizer, range(2, 13), 8, seed)
-    figs.append(svd_scatter(qs, two_d, figures / "fig08_svd_by_tag.png"))
+    figs.append(
+        svd_scatter(
+            qs,
+            two_d,
+            figures / "fig08_svd_by_tag.png",
+            explained=report["kmeans"]["svd_2d_explained_variance"],
+            n_terms=report["kmeans"]["tfidf_shape"][1],
+        )
+    )
     figs.append(elbow(report["kmeans"]["inertia_by_k"], figures / "fig09_kmeans_elbow.png"))
+
+    # B. Evidence for the cleaning decisions.
+    stats = cleaning.load_stats(Path(stats_file)) if stats_file else None
+    if stats is None:
+        log.warning("no cleaning stats at %s: figures 10-12 and tables.md skipped", stats_file)
+    else:
+        report["cleaning"] = {
+            "flow": cleaning.flow_table(stats),
+            "removals": cleaning.removals(stats)[0],
+            "operations": cleaning.operations(stats),
+        }
+        figs.append(cleaning.removals_chart(stats, figures / "fig10_cleaning_removed.png"))
+        figs += [
+            f
+            for f in (
+                cleaning.score_profile_chart(stats, figures / "fig11_score_profile.png"),
+                cleaning.leaky_patterns_chart(stats, figures / "fig12_leaky_patterns.png"),
+            )
+            if f
+        ]
+        out.mkdir(parents=True, exist_ok=True)
+        link_leak_path = out / "link_leak.json"
+        link_leak = (
+            json.loads(link_leak_path.read_text(encoding="utf-8"))
+            if link_leak_path.exists()
+            else None
+        )
+        (out / "tables.md").write_text(cleaning.tables_markdown(stats, link_leak), encoding="utf-8")
+    if "is_low_info" in c:
+        report["low_info_comments"] = {
+            "share_by_kind": {k: round(v, 4) for k, v in cleaning.low_info_share(c).items()},
+        }
+        figure = cleaning.low_info_chart(c, figures / "fig13_low_info.png")
+        if figure:
+            figs.append(figure)
 
     report["figures"] = figs
     out.mkdir(parents=True, exist_ok=True)

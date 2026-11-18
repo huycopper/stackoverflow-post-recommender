@@ -14,9 +14,10 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--clean-dir", default="data/clean")
     parser.add_argument("--out", default="reports/eda")
     parser.add_argument("--seed", type=int, default=42)
+    parser.add_argument("--stats-file", default="reports/cleaning_stats.json")
     args = parser.parse_args(argv)
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
-    report = run_eda(args.clean_dir, args.out, seed=args.seed)
+    report = run_eda(args.clean_dir, args.out, seed=args.seed, stats_file=args.stats_file)
     print(f"{len(report['figures'])} figures and summary.json in {args.out}")
     return 0
 
