@@ -108,6 +108,42 @@ Hung chưa chốt cần bao nhiêu dữ liệu, nên tạm thời nhóm **thu th
 - Các trang seed càng về sau thì câu hỏi càng ít "kinh điển", nên mỗi seed cho ít câu trùng hơn.
 - Việc làm sạch **chưa làm**. Huy Copper và Nguyễn Huy sẽ xem dữ liệu, tìm insight trước, rồi mới thống nhất cần xử lý những gì.
 
+## Từng bước ra 311.963 câu hỏi (số liệu đến 16/11/2026)
+
+Đếm lại từ `data/raw/` ngày 18/11/2026. Mỗi câu hỏi được tính cho bước và lần chạy **đầu tiên** lấy được nó, nên cộng các dòng lại là ra đúng tổng. Số cộng dồn khớp với log của từng lần chạy. Câu trả lời và comment không làm tăng số câu hỏi nên không có trong bảng.
+
+### Theo bước
+
+| Bước | Câu hỏi mới | Câu bị đóng vì trùng | Cặp trùng | Ghi chú |
+|---|---|---|---|---|
+| Seed | 23.300 | 1.308 | 1.426 | 300 trang × 100 câu, được 29.996 seed khác nhau. 6.696 seed đã có từ trước, vì chúng link tới seed ở các trang trước nên đã được lấy ở bước `linked`. |
+| Background | 100 | 5 | 7 | 1 trang câu mới hoạt động gần đây. |
+| Linked | 283.307 | 65.375 | 73.427 | Câu có link tới seed. Trung bình mỗi seed kéo về khoảng 9,4 câu mới. |
+| Originals | 5.256 | 366 | 408 | Câu gốc của các câu trùng mà chưa lấy được ở bước trước. |
+| **Tổng** | **311.963** | **67.054** | **75.268** | |
+
+### Theo lần chạy
+
+| Lần chạy | Request | Câu hỏi mới | Cộng dồn | Cặp trùng mới | Cộng dồn |
+|---|---|---|---|---|---|
+| 10 trang seed (24–25/10) | 2.188 | 10.011 | 10.011 | 2.972 | 2.972 |
+| 100 trang seed (25/10, D10) | 10.969 | 83.693 | 93.704 | 20.498 | 23.470 |
+| 200 trang seed (29/10, D14) | 6.523 | 58.215 | 151.919 | 11.183 | 34.653 |
+| Lấy lại `linked` của 8.760 seed bị cắt (14–15/11, D16) | 12.253 | 123.984 | 275.903 | 35.120 | 69.773 |
+| 300 trang seed (16/11, D16) | 4.254 | 36.060 | 311.963 | 5.495 | 75.268 |
+| **Tổng** | **36.187** | **311.963** | | **75.268** | |
+
+- Request ở đây là số bản ghi trong raw, mỗi bản ghi là một lần gọi API. Dòng "100 trang" gồm cả 54 request lấy tag đồng nghĩa sáng 29/10 (D13).
+- Số câu mới không tăng tỉ lệ với số trang, vì seed sắp theo vote: trang càng sau thì seed càng ít được câu khác link tới. 8.760 seed được lấy lại ở D16 gần hết thuộc 100 trang đầu (819 trên 876 batch).
+
+### Vì sao raw có 641.027 dòng câu hỏi mà chỉ có 311.963 câu
+
+- Trước khi sửa `linked`, trang 2 và 3 trả lại y hệt trang 1, nên một câu bị ghi tới 3 lần. Ví dụ lần chạy 10 trang có 30.000 dòng `linked` nhưng chỉ 8.489 câu mới.
+- Một câu có thể link tới nhiều seed nên xuất hiện trong nhiều batch. Các cửa sổ ngày tạo cũng cố ý gối lên nhau một chút ở chỗ nối.
+- Nhiều seed đã được lấy từ trước ở bước `linked`.
+
+Vì vậy bước làm sạch phải lọc trùng theo `question_id` và ghi lại số dòng bị loại.
+
 ## Chạy tự động mỗi ngày
 
 `scripts/collect_daily.ps1` chạy bộ thu thập với `config/collect.toml` và ghi log vào `data/logs/`. Trên máy Huy Copper, script này được đặt lịch chạy 22:00 mỗi ngày (tạo ngày 25/10/2026). Tạo lịch giống vậy trên máy Windows khác (PowerShell, chạy dưới tài khoản của mình):
