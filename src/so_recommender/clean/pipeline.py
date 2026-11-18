@@ -186,7 +186,7 @@ def run(cfg: CleanConfig, spark: SparkSession) -> dict[str, Any]:
     # taken before the filter so the threshold can be checked again when more data is collected.
     stats.extra["score_profile"] = {
         "groups": score_profile(questions, cfg.quality["min_question_score"], DUPLICATE_REASONS),
-        "note": "before the quality filter; the first group is dropped (decisions.md, D14)",
+        "note": "before the quality filter; groups with dropped = true are removed (D14)",
     }
     questions = flag_question_quality(questions, cfg.quality).persist(CACHE)
     bad_questions = questions.filter(F.size("quality_rejects") > 0)

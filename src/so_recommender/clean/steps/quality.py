@@ -28,22 +28,25 @@ def _no_reasons() -> Column:
 def score_profile(
     questions: DataFrame, min_score: int, duplicate_reasons: list[str]
 ) -> list[dict[str, Any]]:
-    """How questions differ by score group, to check `min_question_score` on new data.
+    """How questions differ by score, to check `min_question_score` on new data.
 
-    Groups: score <= min_score (dropped), min_score < score < 0, score >= 0. Per group: how many
-    were closed as duplicates, closed for another reason, and have no code block.
+    One group per score from -1 down to `min_score - 1`, plus ">= 0" and everything lower
+    ("<= min_score - 2"), so the threshold sits in the middle of the table. Per group: how many
+    questions were closed as duplicates, closed for another reason, and have no code block.
+    `dropped` says whether the quality rule removes the group.
     """
+    lowest = min_score - 2  # the "or lower" group
     score = F.col("score")
-    group = (
-        F.when(score <= min_score, F.lit(f"<= {min_score}"))
-        .when(score < 0, F.lit(f"{min_score + 1} .. -1"))
-        .otherwise(F.lit(">= 0"))
+    bucket = (
+        F.when(score >= 0, F.lit(0))
+        .when(score > lowest, score.cast("int"))
+        .otherwise(F.lit(lowest))
     )
     closed = F.col("closed_reason")
     is_duplicate = F.coalesce(closed.isin(*duplicate_reasons), F.lit(False))
     rows = (
-        questions.withColumn("score_group", group)
-        .groupBy("score_group")
+        questions.withColumn("bucket", bucket)
+        .groupBy("bucket")
         .agg(
             F.count("*").alias("questions"),
             F.sum(is_duplicate.cast("int")).alias("closed_duplicate"),
@@ -52,13 +55,14 @@ def score_profile(
         )
         .collect()
     )
-    order = {f"<= {min_score}": 0, f"{min_score + 1} .. -1": 1, ">= 0": 2}
     out = []
-    for r in sorted(rows, key=lambda r: order[r["score_group"]]):
-        n = r["questions"]
+    for r in sorted(rows, key=lambda r: -r["bucket"]):
+        n, value = r["questions"], r["bucket"]
+        label = ">= 0" if value == 0 else (f"<= {value}" if value == lowest else str(value))
         out.append(
             {
-                "score_group": r["score_group"],
+                "score_group": label,
+                "dropped": value <= min_score,
                 "questions": n,
                 **{
                     f"{key}_share": round(r[key] / n, 4)

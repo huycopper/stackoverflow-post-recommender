@@ -249,7 +249,8 @@ def test_quality_rules_drop_bad_questions_and_flag_closed_ones(cleaned):
     step = next(s for s in report["steps"] if s["entity"] == "question" and s["step"] == "quality")
     assert step["rows_removed"] == 2
     profile = {g["score_group"]: g for g in report["score_profile"]["groups"]}
-    assert profile["<= -5"]["questions"] == 1  # question 6, counted before it is dropped
+    assert profile["<= -7"]["questions"] == 1 and profile["<= -7"]["dropped"]  # question 6
+    assert not profile[">= 0"]["dropped"]
     assert profile[">= 0"]["closed_other_share"] > 0  # question 3, closed as opinion-based
     questions = _rows(spark, cfg.clean_dir / "questions.parquet", "question_id")
     assert "closed_reason" not in (questions[2]["warning_fields"] or [])  # a duplicate is expected
