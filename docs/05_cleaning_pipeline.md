@@ -63,7 +63,7 @@ Code ở `clean/steps/quality.py`, ngưỡng ở mục `[quality]` và `[low_inf
 | Comment tự sinh "This question is similar to: [link]…" (bản mới của "Possible duplicate of…") | **Loại** ở bước 2 (lộ đáp án) | |
 
 - Loại câu hỏi thì câu trả lời và comment của nó cũng bị loại ở bước "mồ côi" (lần chạy 12/11: 544 câu trả lời, 1.743 comment).
-- **Khi có thêm dữ liệu:** chạy lại pipeline rồi xem `score_profile` trong `reports/cleaning_stats.json`. Bảng này tính **trước** khi lọc, cho mỗi nhóm điểm tỉ lệ câu bị đóng vì trùng, đóng vì lý do khác và không có code. Nếu nhóm `<= -5` không còn khác hẳn nhóm `>= 0` thì xem lại ngưỡng.
+- **Khi có thêm dữ liệu:** chạy lại pipeline rồi xem `score_profile` trong `reports/cleaning_stats.json`. Bảng này tính **trước** khi lọc, một dòng cho mỗi mức điểm (−1 đến −6, "≤ −7", "≥ 0"), với tỉ lệ câu bị đóng vì trùng, đóng vì lý do khác và không có code; dòng nào bị loại có `dropped = true`. Xem lại ngưỡng nếu tỉ lệ thay đổi nhiều (biểu đồ: `fig11_score_profile.png`).
 - **Số liệu:** số bài bị loại theo từng lý do nằm ở bước `quality` và `repeats` trong `cleaning_stats.json`.
 
 ### 5. Chuẩn hóa kiểu dữ liệu
@@ -83,3 +83,13 @@ Do nhóm ETL làm. Kết quả và biểu đồ lưu trong `notebooks/eda.ipynb`
 
 - Phân bố tag, độ dài body và comment, số comment trên mỗi câu hỏi.
 - Tỉ lệ câu hỏi không có comment, chia theo câu bị đóng vì trùng và câu khác.
+
+## Chạy lại bằng chứng khi có thêm dữ liệu
+
+```bash
+docker compose -f docker-compose.clean.yml run --rm spark-clean python -m so_recommender.clean all
+uv run --group eda python scripts/link_leak.py          # comment trỏ tới câu gốc (cần data/raw)
+uv run --group eda python -m so_recommender.eda          # hình, summary.json và tables.md
+```
+
+Phần B của EDA (bảng số dòng qua từng bước, thao tác sửa hoặc gắn cờ, biểu đồ theo điểm, theo mẫu comment lộ đáp án, theo lý do ít thông tin) đọc `reports/cleaning_stats.json` và dữ liệu sạch, nên số liệu tự cập nhật; không ghi cứng số vào báo cáo. `scripts/review_low_info.py` xuất Excel ví dụ để xem lại nhãn `is_low_info`; `scripts/slides/` dựng lại slide báo cáo từ số liệu mới.
