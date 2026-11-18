@@ -1,6 +1,6 @@
 # 09. Kế hoạch
 
-Cập nhật lần cuối: **16/11/2026**. Ngày báo cáo tiến độ và báo cáo cuối **chưa có**. Khi có thì thêm vào đây và vào [02](02_course_requirements.md#mốc-thời-gian).
+Cập nhật lần cuối: **18/11/2026**. Ngày báo cáo tiến độ và báo cáo cuối **chưa có**. Khi có thì thêm vào đây và vào [02](02_course_requirements.md#mốc-thời-gian).
 
 Đánh dấu `[x]` khi xong, ghi tên người nhận sau mỗi mục.
 
@@ -55,7 +55,13 @@ Cập nhật lần cuối: **16/11/2026**. Ngày báo cáo tiến độ và báo
   - 76,4% câu hỏi có comment. Trong các câu trùng, 48.317 trên 62.135 câu (78%) có comment.
   - Lịch 22:00 vẫn bật, nhưng với 200 trang seed thì không còn gì để lấy.
 - [x] Sau đó tăng `seed_pages_per_tag` lên quá 200 (D16): tăng lên 300 ngày 16/11. (Huy Copper)
-- [ ] Thu thập tới 300 trang seed: lịch 22:00 bắt đầu lấy từ tối 16/11, tiếp từ trang 201. Ước đoán (chưa đo) tốn dưới một ngày quota, vì seed sắp theo vote nên các trang sau ít câu liên kết hơn. (Huy Copper)
+- [x] Thu thập tới 300 trang seed: lịch 22:00 ngày 16/11 lấy xong trong một lần, từ 22:00 tới 23:15 (4.254 request, còn dư 5.746 quota). Log ở `data/logs/collect_20261116_2200.log`, tóm tắt ở `data/exports/full_summary_20261118.json`, dữ liệu 934 MB trong `data/raw/`. (Huy Copper)
+  - **311.963 câu hỏi** (thêm 36.060): 29.996 seed. 67.054 câu bị đóng vì trùng, ra **75.268 cặp trùng** (thêm 5.495). Thiếu 12 câu gốc vì đã bị xóa. Không batch `linked` nào chạm giới hạn.
+  - 664.067 câu trả lời: thiếu 9 câu so với `answer_count`, ở 20 câu hỏi.
+  - Comment: 941.233 comment của câu trả lời (đủ). 835.368 trên 840.436 comment của câu hỏi, vì có 1.291 câu API không trả comment. 45.907 comment làm lộ đáp án, cần lọc.
+  - 75,7% câu hỏi có comment. Trong các câu trùng, 52.033 trên 67.054 câu (78%) có comment.
+  - Hiệu quả giảm dần: 100 trang này cho khoảng 1,3 cặp trùng mỗi request, so với khoảng 2,9 ở lần lấy lại `linked` (D16) và 1,7 ở trang 101–200 (D14).
+  - Lịch 22:00 vẫn bật. Tối 17/11 nó chạy nhưng không còn gì để lấy (0 request).
 - [ ] Báo cả nhóm về D16, vì nó thay thỏa thuận "chưa crawl lại" ngày 31/10. (Huy Copper)
 - [x] Xuất dữ liệu để khám phá: `data/flat/*.parquet` và `data/exports/explore_20261026.xlsx` (26/10). (Huy Copper)
 - [x] Gửi dữ liệu cho Nguyễn Huy qua Drive. (Huy Copper)
