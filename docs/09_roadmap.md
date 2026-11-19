@@ -1,6 +1,6 @@
 # 09. Kế hoạch
 
-Cập nhật lần cuối: **18/11/2026**. Ngày báo cáo tiến độ và báo cáo cuối **chưa có**. Khi có thì thêm vào đây và vào [02](02_course_requirements.md#mốc-thời-gian).
+Cập nhật lần cuối: **19/11/2026**. Ngày báo cáo tiến độ và báo cáo cuối **chưa có**. Khi có thì thêm vào đây và vào [02](02_course_requirements.md#mốc-thời-gian).
 
 Đánh dấu `[x]` khi xong, ghi tên người nhận sau mỗi mục.
 
@@ -41,7 +41,9 @@ Cập nhật lần cuối: **18/11/2026**. Ngày báo cáo tiến độ và báo
   - Comment: 571.918 comment của câu trả lời (đủ). 405.115 trên 409.497 comment của câu hỏi, vì có 1.118 câu API không trả comment. 22.593 comment làm lộ đáp án, cần lọc.
   - 74,5% câu hỏi có comment. Trong các câu trùng, 22.852 trên 29.941 câu (76%) có comment.
   - 57 batch `linked` chạm giới hạn 3 trang.
-- [ ] Gửi bản raw mới `data/exports/so_raw_jsonl_20261029_v2.zip` (557 MB, 200 trang seed, đã kiểm tra không chứa API key) cho Nguyễn Huy qua Drive (D15). Bản này chứa cả dữ liệu của bản gửi lúc 14:30. (Huy Copper)
+- [ ] Gửi bản raw mới `data/exports/so_raw_jsonl_20261119.zip` cho Nguyễn Huy qua Drive (D15). (Huy Copper)
+  - Đóng gói ngày 19/11: 977 MB, 300 trang seed, đã sửa `linked`, có `README_DATA.md` và `manifest.json`, đã kiểm tra không chứa API key. Chứa toàn bộ dữ liệu nên thay cho bản v2 ngày 29/10 (bản v2 chưa từng được gửi).
+  - Còn chờ tải lên Drive và gửi link cho Nguyễn Huy.
 - [x] Sửa lỗi phân trang của bước `linked`: lật theo cửa sổ ngày tạo (`todate`) thay cho `page` (14/11, D16). (Huy Copper)
 - [x] Chạy `repair` rồi `run` để lấy lại câu `linked` của 8.760 seed bị cắt ở 100 câu. Ước tính khoảng 20 nghìn request, tức khoảng 2 ngày quota (D16). Thực tế tốn khoảng 12.250 request trong 2 tối (14–15/11). (Huy Copper)
   - 14/11: đã chạy `repair` (8.760 seed vào lại hàng đợi), sao lưu state cũ ở `data/collect_state.backup_20261114_before_d16.json`. Lần `run` đầu tiên bắt đầu lúc 22:06, log ở `data/logs/collect_20261114_d16.log`.
